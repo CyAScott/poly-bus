@@ -1,0 +1,45 @@
+{
+  "settings": {
+    // Jest Test Explorer settings
+    "jest.autoRun": "off",
+    "jest.showCoverageOnLoad": true,
+    "jest.coverageFormatter": "DefaultFormatter",
+    "jest.coverageColors": {
+      "covered": "rgba(9, 156, 65, 0.4)",
+      "uncovered": "rgba(121, 31, 10, 0.4)",
+      "partially": "rgba(235, 198, 52, 0.4)"
+    },
+    
+    // TypeScript settings for tests
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.suggest.autoImports": true,
+    
+    // File associations
+    "files.associations": {
+      "*.test.ts": "typescript",
+      "*.spec.ts": "typescript"
+    },
+    
+    // Exclude coverage directory from file explorer
+    "files.exclude": {
+      "**/coverage": true,
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    
+    // Test file templates
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    }
+  },
+  
+  "extensions": {
+    "recommendations": [
+      "orta.vscode-jest",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss"
+    ]
+  }
+}

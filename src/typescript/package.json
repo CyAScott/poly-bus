@@ -1,0 +1,84 @@
+{
+  "name": "poly-bus",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A TypeScript NPM package that works in both browser and Node.js environments",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "browser": "./dist/index.umd.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "browser": "./dist/index.umd.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "npm run build:node && npm run build:browser && npm run build:types",
+    "build:node": "tsc --module commonjs --outDir dist/cjs && mv dist/cjs/index.js dist/index.js",
+    "build:browser": "rollup -c",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:dev": "jest --coverage --passWithNoTests --coverageThreshold='{}'",
+    "test:ci": "jest --coverage --watchAll=false --passWithNoTests",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "typescript",
+    "browser",
+    "node",
+    "universal",
+    "dual-package",
+    "messaging",
+    "message-bus",
+    "polyglot",
+    "microservices",
+    "distributed-systems"
+  ],
+  "author": "Cy Scott <cy.a.scott@live.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CyAScott/poly-bus.git",
+    "directory": "src/typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/CyAScott/poly-bus/issues"
+  },
+  "homepage": "https://github.com/CyAScott/poly-bus#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@jest/globals": "^30.2.0",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.39.0",
+    "jest": "^30.2.0",
+    "rollup": "^4.1.4",
+    "ts-jest": "^29.4.5",
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}

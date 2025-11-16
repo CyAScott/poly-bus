@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PloyBus.Tests\PloyBus.Tests.csproj" Type="Classic C#" />
+  <Project Path="PolyBus\PolyBus.csproj" Type="Classic C#" />
+</Solution>
