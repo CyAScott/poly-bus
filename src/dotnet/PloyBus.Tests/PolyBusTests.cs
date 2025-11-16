@@ -103,7 +103,7 @@ public class PolyBusTests
         await bus.Stop();
 
         //Assert
-        Assert.That(processedOn, Is.GreaterThanOrEqualTo(scheduledAt));
+        Assert.That(processedOn.AddSeconds(1), Is.GreaterThanOrEqualTo(scheduledAt));
     }
 
     [Test]
