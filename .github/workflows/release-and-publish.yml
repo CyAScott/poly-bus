@@ -212,7 +212,7 @@ jobs:
         run: |
           npm ci
           npm run build
-          npm publish --provenance --access public
+          npm publish
 
   # Publish to PyPI
   publish-pypi:
