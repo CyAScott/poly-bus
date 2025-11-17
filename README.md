@@ -1,5 +1,7 @@
 # PolyBus
 
+<img src="PolyBus.png" height="100" width="100" />
+
 **A polyglot messaging framework for building interoperable applications across multiple programming languages.**
 
 PolyBus provides a unified interface for sending and receiving messages between applications written in different languages. Whether you're building microservices, distributed systems, or integrating legacy applications, PolyBus enables seamless communication across your polyglot stack.
