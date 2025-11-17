@@ -13,7 +13,6 @@
     <PackageProjectUrl>https://github.com/CyAScott/poly-bus</PackageProjectUrl>
     <RepositoryUrl>https://github.com/CyAScott/poly-bus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
