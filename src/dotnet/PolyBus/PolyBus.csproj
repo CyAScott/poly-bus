@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/CyAScott/poly-bus</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>..\..\PolyBus.png</PackageIcon>
+    <PackageIcon>PolyBus.png</PackageIcon>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
