@@ -5,7 +5,6 @@ branches:
     increment: Inherit
     prevent-increment-of-merged-branch-version: true
     track-merge-target: false
-    track-merge-message: true
     source-branches: []
   feature:
     regex: ^features?[/-]
