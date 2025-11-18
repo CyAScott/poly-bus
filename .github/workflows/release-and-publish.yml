@@ -14,95 +14,53 @@ permissions:
   id-token: write
 
 jobs:
-  # Determine version bump type from commit messages
+  # Determine version using GitVersion
   determine-version:
     name: Determine Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.semver.outputs.version }}
-      version_tag: ${{ steps.semver.outputs.version_tag }}
-      should_release: ${{ steps.semver.outputs.should_release }}
+      version: ${{ steps.gitversion.outputs.semVer }}
+      version_tag: v${{ steps.gitversion.outputs.semVer }}
+      should_release: ${{ steps.check_release.outputs.should_release }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for proper versioning
+          fetch-depth: 0
 
-      - name: Get latest tag
-        id: get_tag
-        run: |
-          # Get the latest tag, or use 0.0.0 if no tags exist
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
-          echo "Latest tag: ${LATEST_TAG}"
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v1
+        with:
+          versionSpec: '5.x'
 
-      - name: Determine version bump
-        id: semver
+      - name: Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v1
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
+
+      - name: Display GitVersion outputs
         run: |
-          LATEST_TAG="${{ steps.get_tag.outputs.latest_tag }}"
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+          echo "MajorMinorPatch: ${{ steps.gitversion.outputs.majorMinorPatch }}"
+          echo "CommitsSinceVersionSource: ${{ steps.gitversion.outputs.commitsSinceVersionSource }}"
+
+      - name: Check if release should be created
+        id: check_release
+        run: |
+          # Check if there are commits with conventional commit messages that warrant a release
+          COMMITS=$(git log --pretty=format:"%s" -1)
+          echo "Latest commit: $COMMITS"
           
-          # Remove 'v' prefix if present
-          CURRENT_VERSION=${LATEST_TAG#v}
-          
-          # Get commit messages since last tag
-          if [ "$LATEST_TAG" = "v0.0.0" ]; then
-            COMMITS=$(git log --pretty=format:"%s" HEAD)
-          else
-            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
-          fi
-          
-          echo "Analyzing commits:"
-          echo "$COMMITS"
-          
-          # Determine bump type based on conventional commits
-          BUMP_TYPE="patch"
-          
-          if echo "$COMMITS" | grep -qiE "^(BREAKING CHANGE|.*!:)"; then
-            BUMP_TYPE="major"
-            echo "Found breaking change - major version bump"
-          elif echo "$COMMITS" | grep -qiE "^feat(\(.*\))?:"; then
-            BUMP_TYPE="minor"
-            echo "Found feature - minor version bump"
-          elif echo "$COMMITS" | grep -qiE "^(fix|perf|refactor|docs|style|test|chore)(\(.*\))?:"; then
-            BUMP_TYPE="patch"
-            echo "Found fix/patch - patch version bump"
+          if echo "$COMMITS" | grep -qiE "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\(.*\))?(!:|:)"; then
+            echo "Conventional commit found - creating release"
+            echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "No conventional commit found - skipping release"
             echo "should_release=false" >> $GITHUB_OUTPUT
-            exit 0
           fi
-          
-          # Parse version
-          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR="${VERSION_PARTS[0]}"
-          MINOR="${VERSION_PARTS[1]}"
-          PATCH="${VERSION_PARTS[2]}"
-          
-          # Bump version
-          case $BUMP_TYPE in
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-          esac
-          
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          NEW_TAG="v${NEW_VERSION}"
-          
-          echo "New version: ${NEW_VERSION}"
-          echo "New tag: ${NEW_TAG}"
-          
-          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "version_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
-          echo "should_release=true" >> $GITHUB_OUTPUT
 
   # Build and test all packages
   build-and-test:

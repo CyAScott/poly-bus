@@ -1,0 +1,36 @@
+mode: Mainline
+branches:
+  main:
+    regex: ^main$
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    track-merge-message: true
+    source-branches: []
+  feature:
+    regex: ^features?[/-]
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+  pull-request:
+    regex: ^(pull|pull\-requests|pr)[/-]
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: true
+    tag-number-pattern: '[/-](?<number>\d+)'
+  hotfix:
+    regex: ^hotfix(es)?[/-]
+    increment: Patch
+  release:
+    regex: ^releases?[/-]
+    increment: None
+
+ignore:
+  sha: []
+
+merge-message-formats: {}
+
+major-version-bump-message: "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\(.+\\))?(!:|:.*\\n\\n((.+\\n)+\\n)?BREAKING CHANGE:\\s.+)"
+minor-version-bump-message: "^(feat)(\\(.+\\))?:"
+patch-version-bump-message: "^(build|chore|ci|docs|fix|perf|refactor|revert|style|test)(\\(.+\\))?:"
+no-bump-message: "^(?!build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
+
+commit-message-incrementing: Enabled
