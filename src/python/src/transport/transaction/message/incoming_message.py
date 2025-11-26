@@ -1,5 +1,6 @@
 from typing import Any, Optional, Type
 from src.transport.transaction.message.message import Message
+from src.transport.transaction.message.message_info import MessageInfo
 from src.i_poly_bus import IPolyBus
 
 
@@ -8,14 +9,31 @@ class IncomingMessage(Message):
     Represents an incoming message from the transport.
     """
 
-    def __init__(self, bus: "IPolyBus", body: str, message: Optional[Any] = None, message_type: Optional[Type] = None):
+    def __init__(self, bus: "IPolyBus", body: str, message_info: MessageInfo):
         super().__init__(bus)
         if body is None:
             raise ValueError("body cannot be None")
+        if message_info is None:
+            raise ValueError("message_info cannot be None")
         
-        self._message_type = message_type or str
+        self._message_info = message_info
+        self._message_type = bus.messages.get_type_by_message_info(message_info)
         self._body = body
-        self._message = message if message is not None else body
+        self._message = body
+
+    @property
+    def message_info(self) -> MessageInfo:
+        """
+        The message info describing metadata about the message.
+        """
+        return self._message_info
+
+    @message_info.setter
+    def message_info(self, value: MessageInfo) -> None:
+        """
+        Set the message info.
+        """
+        self._message_info = value
 
     @property
     def message_type(self) -> Type:

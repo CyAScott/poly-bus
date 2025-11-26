@@ -10,24 +10,12 @@ class ITransport(ABC):
     
     @property
     @abstractmethod
-    def supports_delayed_messages(self) -> bool:
-        """Whether this transport supports delayed message delivery."""
-        pass
-    
-    @property
-    @abstractmethod
-    def supports_command_messages(self) -> bool:
-        """Whether this transport supports command messages."""
-        pass
-    
-    @property
-    @abstractmethod
-    def supports_subscriptions(self) -> bool:
-        """Whether this transport supports message subscriptions."""
+    def dead_letter_endpoint(self) -> str:
+        """Where messages that cannot be delivered are sent."""
         pass
     
     @abstractmethod
-    async def send(self, transaction: 'Transaction') -> None:
+    async def handle(self, transaction: 'Transaction') -> None:
         """Sends messages associated with the given transaction to the transport.
         
         Args:
@@ -35,18 +23,36 @@ class ITransport(ABC):
         """
         pass
     
+    @property
+    @abstractmethod
+    def supports_delayed_commands(self) -> bool:
+        """If the transport supports sending delayed commands, this will be true."""
+        pass
+    
+    @property
+    @abstractmethod
+    def supports_command_messages(self) -> bool:
+        """If the transport supports sending command messages, this will be true."""
+        pass
+    
     @abstractmethod
     async def subscribe(self, message_info: 'MessageInfo') -> None:
-        """Subscribes to messages so that the transport can start receiving them.
+        """Subscribes to a messages so that the transport can start receiving them.
         
         Args:
             message_info: Information about the message type to subscribe to.
         """
         pass
     
+    @property
+    @abstractmethod
+    def supports_subscriptions(self) -> bool:
+        """If the transport supports event message subscriptions, this will be true."""
+        pass
+    
     @abstractmethod
     async def start(self) -> None:
-        """Enables the transport to start processing messages."""
+        """Starts the transport to start processing messages."""
         pass
     
     @abstractmethod

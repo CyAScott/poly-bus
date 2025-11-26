@@ -39,7 +39,7 @@ class Transaction(ABC):
         """A list of outgoing messages to be sent when the transaction is committed."""
         return self._outgoing_messages
     
-    def add_outgoing_message(self, message: Any, endpoint: Optional[str] = None) -> OutgoingMessage:
+    def add(self, message: Any, endpoint: Optional[str] = None) -> OutgoingMessage:
         """Add an outgoing message to this transaction.
         
         Args:
@@ -52,17 +52,7 @@ class Transaction(ABC):
         Raises:
             ValueError: If message type is not registered.
         """
-        def get_endpoint() -> str:
-            message_info = self._bus.messages.get_message_info(type(message))
-            if message_info is None:
-                raise ValueError(f"Message type {type(message).__name__} is not registered.")
-            return message_info.endpoint
-        
-        outgoing_message = OutgoingMessage(
-            self._bus, 
-            message, 
-            endpoint if endpoint is not None else get_endpoint()
-        )
+        outgoing_message = OutgoingMessage(self._bus, message, endpoint)
         self._outgoing_messages.append(outgoing_message)
         return outgoing_message
     

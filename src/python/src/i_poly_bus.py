@@ -1,7 +1,7 @@
 """PolyBus interface for the Python implementation."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.transport.i_transport import ITransport
@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from src.transport.transaction.message.incoming_message import IncomingMessage
     from src.transport.transaction.message.messages import Messages
     from src.transport.transaction.transaction import Transaction
+    from src.transport.transaction.incoming_transaction import IncomingTransaction
+    from src.transport.transaction.outgoing_transaction import OutgoingTransaction
 
 
 class IPolyBus(ABC):
@@ -29,13 +31,13 @@ class IPolyBus(ABC):
     
     @property
     @abstractmethod
-    def incoming_handlers(self) -> 'List[IncomingHandler]':
+    def incoming_pipeline(self) -> 'List[IncomingHandler]':
         """Collection of handlers for processing incoming messages."""
         pass
     
     @property
     @abstractmethod
-    def outgoing_handlers(self) -> 'List[OutgoingHandler]':
+    def outgoing_pipeline(self) -> 'List[OutgoingHandler]':
         """Collection of handlers for processing outgoing messages."""
         pass
     
@@ -52,14 +54,23 @@ class IPolyBus(ABC):
         pass
     
     @abstractmethod
-    async def create_transaction(self, message: 'Optional[IncomingMessage]' = None) -> 'Transaction':
-        """Creates a new transaction, optionally based on an incoming message.
+    async def create_incoming_transaction(self, message: 'IncomingMessage') -> 'IncomingTransaction':
+        """Creates a new incoming transaction based on an incoming message.
         
         Args:
-            message: Optional incoming message to create the transaction from.
+            message: The incoming message to create the transaction from.
             
         Returns:
-            A new transaction instance.
+            A new incoming transaction instance.
+        """
+        pass
+    
+    @abstractmethod
+    async def create_outgoing_transaction(self) -> 'OutgoingTransaction':
+        """Creates a new outgoing transaction.
+            
+        Returns:
+            A new outgoing transaction instance.
         """
         pass
     

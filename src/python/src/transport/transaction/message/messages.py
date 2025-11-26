@@ -2,9 +2,10 @@
 A collection of message types and their associated message headers.
 """
 from threading import Lock
-from typing import Dict, Optional, Type, Tuple
+from typing import Dict, Type, Tuple
 import threading
 from src.transport.transaction.message.message_info import MessageInfo
+from src.transport.transaction.message.poly_bus_message_not_found_error import PolyBusMessageNotFoundError
 
 
 class Messages:
@@ -19,7 +20,7 @@ class Messages:
         self._types: Dict[Type, Tuple[MessageInfo, str]] = {}
         self._lock = threading.Lock()
     
-    def get_message_info(self, message_type: Type) -> Optional[MessageInfo]:
+    def get_message_info(self, message_type: Type) -> MessageInfo:
         """
         Gets the message attribute associated with the specified type.
         
@@ -27,54 +28,36 @@ class Messages:
             message_type: The message type to get the attribute for
             
         Returns:
-            The MessageInfo if found, otherwise None
+            The MessageInfo associated with the specified type
+            
+        Raises:
+            PolyBusMessageNotFoundError: If no message attribute is found for the specified type
         """
         with self._lock:
             entry = self._types.get(message_type)
-            return entry[0] if entry else None
+            if entry is None:
+                raise PolyBusMessageNotFoundError()
+            return entry[0]
     
-    def get_type_by_header(self, header: str) -> Optional[Type]:
+    def get_header_by_message_info(self, message_info: MessageInfo) -> str:
         """
-        Attempts to get the message type associated with the specified header.
+        Gets the message header associated with the specified attribute.
         
         Args:
-            header: The message header to look up
+            message_info: The MessageInfo to get the header for
             
         Returns:
-            If found, returns the message type; otherwise, returns None.
-        """
-        attribute = MessageInfo.get_attribute_from_header(header)
-        if attribute is None:
-            return None
+            The message header associated with the specified attribute
             
-        with self._lock:
-            # Check cache first
-            if header in self._map:
-                return self._map[header]
-            
-            # Find matching type
-            for msg_type, (msg_attribute, _) in self._types.items():
-                if msg_attribute == attribute:
-                    self._map[header] = msg_type
-                    return msg_type
-            
-            # Cache miss result
-            self._map[header] = None
-            return None
-    
-    def get_header(self, message_type: Type) -> Optional[str]:
-        """
-        Attempts to get the message header associated with the specified type.
-        
-        Args:
-            message_type: The message type to get the header for
-            
-        Returns:
-            If found, returns the message header; otherwise, returns None.
+        Raises:
+            PolyBusMessageNotFoundError: If no message header is found for the specified attribute
         """
         with self._lock:
-            entry = self._types.get(message_type)
-            return entry[1] if entry else None
+            # Check if any type has this message info
+            for msg_type, (msg_attribute, header) in self._types.items():
+                if msg_attribute == message_info:
+                    return message_info.to_string(True)
+            raise PolyBusMessageNotFoundError()
     
     def add(self, message_type: Type) -> MessageInfo:
         """
@@ -88,40 +71,42 @@ class Messages:
             The MessageInfo associated with the message type
             
         Raises:
-            ValueError: If the type does not have a MessageInfo decorator
-            KeyError: If the type is already registered
+            PolyBusMessageNotFoundError: If the type does not have a MessageInfo decorator or is already registered
         """
         # Check for MessageInfo attribute
         if not hasattr(message_type, '_message_info'):
-            raise ValueError(f"Type {message_type.__module__}.{message_type.__name__} does not have a MessageInfo decorator.")
+            raise PolyBusMessageNotFoundError()
         
         attribute = message_type._message_info
         if not isinstance(attribute, MessageInfo):
-            raise ValueError(f"Type {message_type.__module__}.{message_type.__name__} does not have a valid MessageInfo decorator.")
+            raise PolyBusMessageNotFoundError()
         
         header = attribute.to_string(True)
         
         with self._lock:
             if message_type in self._types:
-                raise KeyError(f"Type {message_type.__module__}.{message_type.__name__} is already registered.")
+                raise PolyBusMessageNotFoundError()
             
             self._types[message_type] = (attribute, header)
             self._map[header] = message_type
         
         return attribute
     
-    def get_type_by_message_info(self, message_info: MessageInfo) -> Optional[Type]:
+    def get_type_by_message_info(self, message_info: MessageInfo) -> Type:
         """
-        Attempts to get the message type associated with the specified MessageInfo.
+        Gets the message type associated with the specified MessageInfo.
         
         Args:
             message_info: The MessageInfo to look up
             
         Returns:
-            If found, returns the message type; otherwise, returns None.
+            The message type associated with the specified attribute
+            
+        Raises:
+            PolyBusMessageNotFoundError: If no message type is found for the specified message info attribute
         """
         with self._lock:
             for msg_type, (msg_attribute, _) in self._types.items():
                 if msg_attribute == message_info:
                     return msg_type
-            return None
+            raise PolyBusMessageNotFoundError()

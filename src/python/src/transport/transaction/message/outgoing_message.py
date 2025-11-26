@@ -1,6 +1,7 @@
 from typing import Any, Optional, Type
 from datetime import datetime
 from src.transport.transaction.message.message import Message
+from src.transport.transaction.message.message_info import MessageInfo
 from src.i_poly_bus import IPolyBus
 
 
@@ -9,11 +10,18 @@ class OutgoingMessage(Message):
     Represents an outgoing message to the transport.
     """
 
-    def __init__(self, bus: "IPolyBus", message: Any, endpoint: str):
+    def __init__(
+        self,
+        bus: "IPolyBus",
+        message: Any,
+        endpoint: Optional[str] = None,
+        message_info: Optional[MessageInfo] = None
+    ):
         super().__init__(bus)
         self._message = message
         self._message_type = type(message)
-        self._body = str(message) if message is not None else ""
+        self._message_info = message_info if message_info is not None else bus.messages.get_message_info(type(message))
+        self._body = ""
         self._endpoint = endpoint
         self._deliver_at: Optional[datetime] = None
 
@@ -32,6 +40,20 @@ class OutgoingMessage(Message):
         self._deliver_at = value
 
     @property
+    def message_info(self) -> Optional[MessageInfo]:
+        """
+        The message info describing metadata about the message.
+        """
+        return self._message_info
+
+    @message_info.setter
+    def message_info(self, value: Optional[MessageInfo]) -> None:
+        """
+        Set the message info.
+        """
+        self._message_info = value
+
+    @property
     def message_type(self) -> Type:
         """
         The type of the message.
@@ -46,19 +68,18 @@ class OutgoingMessage(Message):
         self._message_type = value
 
     @property
-    def body(self) -> str:
+    def endpoint(self) -> Optional[str]:
         """
-        The serialized message body contents.
+        An optional location to explicitly send the message to.
         """
-        return self._body
+        return self._endpoint
 
-    @body.setter
-    def body(self, value: str) -> None:
+    @endpoint.setter
+    def endpoint(self, value: Optional[str]) -> None:
         """
-        Set the serialized message body contents.
+        Set the endpoint.
         """
-        self._body = value
-
+        self._endpoint = value
     @property
     def endpoint(self) -> str:
         """
