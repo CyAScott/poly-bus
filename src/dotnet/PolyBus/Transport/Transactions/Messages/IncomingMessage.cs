@@ -3,12 +3,17 @@ using System.Diagnostics;
 namespace PolyBus.Transport.Transactions.Messages;
 
 [DebuggerStepThrough]
-public class IncomingMessage(IPolyBus bus, string body, object? message = null, Type? messageType = null) : Message(bus)
+public class IncomingMessage(IPolyBus bus, string body, MessageInfo messageInfo) : Message(bus)
 {
+    /// <summary>
+    /// The message info describing metadata about the message.
+    /// </summary>
+    public virtual MessageInfo MessageInfo { get; set; } = messageInfo ?? throw new ArgumentNullException(nameof(messageInfo));
+
     /// <summary>
     /// The default is string, but can be changed based on deserialization.
     /// </summary>
-    public virtual Type MessageType { get; set; } = messageType ?? typeof(string);
+    public virtual Type MessageType { get; set; } = bus.Messages.GetTypeByMessageInfo(messageInfo);
 
     /// <summary>
     /// The message body contents.
@@ -18,5 +23,5 @@ public class IncomingMessage(IPolyBus bus, string body, object? message = null, 
     /// <summary>
     /// The deserialized message object, otherwise the same value as Body.
     /// </summary>
-    public virtual object Message { get; set; } = message ?? body;
+    public virtual object Message { get; set; } = body;
 }

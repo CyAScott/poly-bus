@@ -1,5 +1,3 @@
-using PolyBus.Transport.Transactions.Messages;
-
 namespace PolyBus.Transport.Transactions;
 
 /// <summary>
@@ -7,4 +5,4 @@ namespace PolyBus.Transport.Transactions;
 /// This should be used to integrate with external transaction systems to ensure message processing
 /// is done within the context of a transaction.
 /// </summary>
-public delegate Task<Transaction> TransactionFactory(PolyBusBuilder builder, IPolyBus bus, IncomingMessage? message = null);
+public delegate Task<OutgoingTransaction> OutgoingTransactionFactory(PolyBusBuilder builder, IPolyBus bus);

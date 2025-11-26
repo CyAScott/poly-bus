@@ -11,13 +11,15 @@ public interface IPolyBus
 
     ITransport Transport { get; }
 
-    IList<IncomingHandler> IncomingHandlers { get; }
+    IList<IncomingHandler> IncomingPipeline { get; }
 
-    IList<OutgoingHandler> OutgoingHandlers { get; }
+    IList<OutgoingHandler> OutgoingPipeline { get; }
 
     Messages Messages { get; }
 
-    Task<Transaction> CreateTransaction(IncomingMessage? message = null);
+    Task<IncomingTransaction> CreateIncomingTransaction(IncomingMessage message);
+
+    Task<OutgoingTransaction> CreateOutgoingTransaction();
 
     Task Send(Transaction transaction);
 

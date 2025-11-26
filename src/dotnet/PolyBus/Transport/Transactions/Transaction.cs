@@ -21,15 +21,9 @@ public class Transaction(IPolyBus bus)
     /// </summary>
     public virtual IList<OutgoingMessage> OutgoingMessages { get; } = [];
 
-    public virtual OutgoingMessage AddOutgoingMessage(object message, string? endpoint = null)
+    public virtual OutgoingMessage Add(object message, string? endpoint = null)
     {
-        string GetEndpoint()
-        {
-            var messageInfo = bus.Messages.GetMessageInfo(message.GetType())
-                              ?? throw new ArgumentException($"Message type {message.GetType().FullName} is not registered.");
-            return messageInfo.Endpoint;
-        }
-        var outgoingMessage = new OutgoingMessage(bus, message, endpoint ?? GetEndpoint());
+        var outgoingMessage = new OutgoingMessage(bus, message, endpoint);
         OutgoingMessages.Add(outgoingMessage);
         return outgoingMessage;
     }

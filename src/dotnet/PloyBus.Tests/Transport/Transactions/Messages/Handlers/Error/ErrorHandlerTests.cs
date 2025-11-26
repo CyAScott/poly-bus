@@ -14,7 +14,11 @@ public class ErrorHandlerTests
     public void SetUp()
     {
         _testBus = new TestBus("TestBus");
-        _incomingMessage = new IncomingMessage(_testBus, "test message body");
+        _testBus.Messages.Add(typeof(ErrorHandlerTestMessage));
+        _incomingMessage = new IncomingMessage(
+            bus: _testBus,
+            body: "{}",
+            messageInfo: _testBus.Messages.GetMessageInfo(typeof(ErrorHandlerTestMessage)));
         _transaction = new IncomingTransaction(_testBus, _incomingMessage);
         _errorHandler = new TestableErrorHandler();
     }
@@ -88,7 +92,7 @@ public class ErrorHandlerTests
 
         var delayedMessage = _transaction.OutgoingMessages[0];
         Assert.That(delayedMessage.DeliverAt, Is.EqualTo(expectedRetryTime));
-        Assert.That(delayedMessage.Headers[ErrorHandler.RetryCountHeader], Is.EqualTo("1"));
+        Assert.That(delayedMessage.Headers[_errorHandler.RetryCountHeader], Is.EqualTo("1"));
         Assert.That(delayedMessage.Endpoint, Is.EqualTo("TestBus"));
     }
 
@@ -96,7 +100,7 @@ public class ErrorHandlerTests
     public async Task Retrier_WithExistingRetryCount_IncrementsCorrectly()
     {
         // Arrange
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] = "2";
+        _incomingMessage.Headers[_errorHandler.RetryCountHeader] = "2";
         var expectedRetryTime = DateTime.UtcNow.AddMinutes(10);
         _errorHandler.SetNextRetryTime(expectedRetryTime);
 
@@ -109,7 +113,7 @@ public class ErrorHandlerTests
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
 
         var delayedMessage = _transaction.OutgoingMessages[0];
-        Assert.That(delayedMessage.Headers[ErrorHandler.RetryCountHeader], Is.EqualTo("3"));
+        Assert.That(delayedMessage.Headers[_errorHandler.RetryCountHeader], Is.EqualTo("3"));
         Assert.That(delayedMessage.DeliverAt, Is.EqualTo(expectedRetryTime));
     }
 
@@ -117,7 +121,7 @@ public class ErrorHandlerTests
     public async Task Retrier_ExceedsMaxDelayedRetries_SendsToDeadLetter()
     {
         // Arrange
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] =
+        _incomingMessage.Headers[_errorHandler.RetryCountHeader] =
             _errorHandler.DelayedRetryCount.ToString();
 
         var testException = new Exception("Final error");
@@ -131,33 +135,9 @@ public class ErrorHandlerTests
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
 
         var deadLetterMessage = _transaction.OutgoingMessages[0];
-        Assert.That(deadLetterMessage.Endpoint, Is.EqualTo("TestBus.Errors"));
-        Assert.That(deadLetterMessage.Headers[ErrorHandler.ErrorMessageHeader], Is.EqualTo("Final error"));
-        Assert.That(deadLetterMessage.Headers[ErrorHandler.ErrorStackTraceHeader], Is.Not.Null);
-    }
-
-    [Test]
-    public async Task Retrier_WithCustomDeadLetterEndpoint_UsesCustomEndpoint()
-    {
-        // Arrange
-        _errorHandler = new TestableErrorHandler
-        {
-            DeadLetterEndpoint = "CustomDeadLetter"
-        };
-
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] =
-            _errorHandler.DelayedRetryCount.ToString();
-
-        Task Next() => throw new Exception("Final error");
-
-        // Act
-        await _errorHandler.Retrier(_transaction, Next);
-
-        // Assert
-        Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
-
-        var deadLetterMessage = _transaction.OutgoingMessages[0];
-        Assert.That(deadLetterMessage.Endpoint, Is.EqualTo("CustomDeadLetter"));
+        Assert.That(deadLetterMessage.Endpoint, Is.EqualTo(TestTransport.DefaultDeadLetterEndpoint));
+        Assert.That(deadLetterMessage.Headers[_errorHandler.ErrorMessageHeader], Is.EqualTo("Final error"));
+        Assert.That(deadLetterMessage.Headers[_errorHandler.ErrorStackTraceHeader], Is.Not.Null);
     }
 
     [Test]
@@ -169,7 +149,7 @@ public class ErrorHandlerTests
         Task Next()
         {
             callCount++;
-            _transaction.AddOutgoingMessage("some message", "some endpoint");
+            _transaction.Add(new ErrorHandlerTestMessage());
             throw new Exception("Test error");
         }
 
@@ -180,7 +160,7 @@ public class ErrorHandlerTests
         Assert.That(callCount, Is.EqualTo(_errorHandler.ImmediateRetryCount));
         // Should only have the delayed retry message, not the messages added in next()
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
-        Assert.That(_transaction.OutgoingMessages[0].Headers.ContainsKey(ErrorHandler.RetryCountHeader), Is.True);
+        Assert.That(_transaction.OutgoingMessages[0].Headers.ContainsKey(_errorHandler.RetryCountHeader), Is.True);
     }
 
     [Test]
@@ -205,7 +185,7 @@ public class ErrorHandlerTests
         // Assert
         Assert.That(callCount, Is.EqualTo(1)); // Should enforce minimum of 1
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
-        Assert.That(_transaction.OutgoingMessages[0].Headers[ErrorHandler.RetryCountHeader], Is.EqualTo("1"));
+        Assert.That(_transaction.OutgoingMessages[0].Headers[_errorHandler.RetryCountHeader], Is.EqualTo("1"));
     }
 
     [Test]
@@ -224,7 +204,7 @@ public class ErrorHandlerTests
         // Assert
         // Even with DelayedRetryCount = 0, Math.Max(1, DelayedRetryCount) makes it 1
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
-        Assert.That(_transaction.OutgoingMessages[0].Headers[ErrorHandler.RetryCountHeader], Is.EqualTo("1"));
+        Assert.That(_transaction.OutgoingMessages[0].Headers[_errorHandler.RetryCountHeader], Is.EqualTo("1"));
         Assert.That(_transaction.OutgoingMessages[0].DeliverAt, Is.EqualTo(expectedRetryTime));
     }
 
@@ -232,7 +212,7 @@ public class ErrorHandlerTests
     public void GetNextRetryTime_DefaultImplementation_UsesDelayCorrectly()
     {
         // Arrange
-        var handler = new ErrorHandler { Delay = 60 };
+        var handler = new ErrorHandler { DelayIncrement = 60 };
         var beforeTime = DateTime.UtcNow;
 
         // Act
@@ -282,7 +262,7 @@ public class ErrorHandlerTests
     public async Task Retrier_InvalidRetryCountHeader_TreatsAsZero()
     {
         // Arrange
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] = "invalid";
+        _incomingMessage.Headers[_errorHandler.RetryCountHeader] = "invalid";
         var expectedRetryTime = DateTime.UtcNow.AddMinutes(5);
         _errorHandler.SetNextRetryTime(expectedRetryTime);
 
@@ -294,14 +274,14 @@ public class ErrorHandlerTests
         // Assert
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
         var delayedMessage = _transaction.OutgoingMessages[0];
-        Assert.That(delayedMessage.Headers[ErrorHandler.RetryCountHeader], Is.EqualTo("1"));
+        Assert.That(delayedMessage.Headers[_errorHandler.RetryCountHeader], Is.EqualTo("1"));
     }
 
     [Test]
     public async Task Retrier_ExceptionStackTrace_IsStoredInHeader()
     {
         // Arrange
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] =
+        _incomingMessage.Headers[_errorHandler.RetryCountHeader] =
             _errorHandler.DelayedRetryCount.ToString();
 
         var exceptionWithStackTrace = new Exception("Error with stack trace");
@@ -314,15 +294,15 @@ public class ErrorHandlerTests
         // Assert
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
         var deadLetterMessage = _transaction.OutgoingMessages[0];
-        Assert.That(deadLetterMessage.Headers[ErrorHandler.ErrorStackTraceHeader], Is.Not.Null);
-        Assert.That(deadLetterMessage.Headers[ErrorHandler.ErrorStackTraceHeader], Is.Not.Empty);
+        Assert.That(deadLetterMessage.Headers[_errorHandler.ErrorStackTraceHeader], Is.Not.Null);
+        Assert.That(deadLetterMessage.Headers[_errorHandler.ErrorStackTraceHeader], Is.Not.Empty);
     }
 
     [Test]
     public async Task Retrier_ExceptionWithNullStackTrace_UsesEmptyString()
     {
         // Arrange
-        _incomingMessage.Headers[ErrorHandler.RetryCountHeader] =
+        _incomingMessage.Headers[_errorHandler.RetryCountHeader] =
             _errorHandler.DelayedRetryCount.ToString();
 
         // Create an exception with null StackTrace using custom exception
@@ -336,7 +316,7 @@ public class ErrorHandlerTests
         // Assert
         Assert.That(_transaction.OutgoingMessages.Count, Is.EqualTo(1));
         var deadLetterMessage = _transaction.OutgoingMessages[0];
-        Assert.That(deadLetterMessage.Headers[ErrorHandler.ErrorStackTraceHeader], Is.EqualTo(string.Empty));
+        Assert.That(deadLetterMessage.Headers[_errorHandler.ErrorStackTraceHeader], Is.EqualTo(string.Empty));
     }
 
     // Helper class to override GetNextRetryTime for testing
@@ -353,47 +333,5 @@ public class ErrorHandlerTests
         {
             return _nextRetryTime ?? base.GetNextRetryTime(attempt);
         }
-    }
-
-    // Custom exception that returns null for StackTrace
-    private class ExceptionWithNullStackTrace(string message) : Exception(message)
-    {
-        public override string? StackTrace => null;
-    }
-
-    // Test implementation of IPolyBus for testing purposes
-    private class TestBus(string name) : IPolyBus
-    {
-        public IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
-        public ITransport Transport { get; } = new TestTransport();
-        public IList<IncomingHandler> IncomingHandlers { get; } = [];
-        public IList<OutgoingHandler> OutgoingHandlers { get; } = [];
-        public Messages Messages { get; } = new();
-        public string Name { get; } = name;
-
-        public Task<Transaction> CreateTransaction(IncomingMessage? message = null)
-        {
-            Transaction transaction = message == null
-                ? new OutgoingTransaction(this)
-                : new IncomingTransaction(this, message);
-            return Task.FromResult(transaction);
-        }
-
-        public Task Send(Transaction transaction) => Task.CompletedTask;
-        public Task Start() => Task.CompletedTask;
-        public Task Stop() => Task.CompletedTask;
-    }
-
-    // Simple test transport implementation
-    private class TestTransport : ITransport
-    {
-        public bool SupportsCommandMessages => true;
-        public bool SupportsDelayedMessages => true;
-        public bool SupportsSubscriptions => false;
-
-        public Task Send(Transaction transaction) => Task.CompletedTask;
-        public Task Subscribe(MessageInfo messageInfo) => Task.CompletedTask;
-        public Task Start() => Task.CompletedTask;
-        public Task Stop() => Task.CompletedTask;
     }
 }

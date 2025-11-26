@@ -1,61 +1,48 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace PolyBus.Transport.Transactions.Messages.Handlers.Serializers;
 
+/// <summary>
+/// Handlers for serializing and deserializing messages as JSON.
+/// </summary>
 public class JsonHandlers
 {
+    /// <summary>
+    /// The options to use for the JSON serializer.
+    /// </summary>
     public JsonSerializerOptions? JsonSerializerOptions { get; set; }
 
+    /// <summary>
+    /// The content type to set on outgoing messages.
+    /// </summary>
     public string ContentType { get; set; } = "application/json";
 
     /// <summary>
-    /// If the type header is missing, invalid, or if the type cannot be found, throw an exception.
+    /// The header key to use for the content type.
     /// </summary>
-    public bool ThrowOnMissingType { get; set; } = true;
+    public string Header { get; set; } = Headers.ContentType;
 
-    public Task Deserializer(IncomingTransaction transaction, Func<Task> next)
+    /// <summary>
+    /// Deserializes incoming messages from JSON.
+    /// </summary>
+    public virtual Task Deserializer(IncomingTransaction transaction, Func<Task> next)
     {
-        var message = transaction.IncomingMessage;
+        var incomingMessage = transaction.IncomingMessage;
 
-        var type = !message.Headers.TryGetValue(Headers.MessageType, out var header)
-            ? null
-            : message.Bus.Messages.GetTypeByHeader(header);
-
-        if (type == null && ThrowOnMissingType)
-        {
-            throw new InvalidOperationException("The type header is missing, invalid, or if the type cannot be found.");
-        }
-
-        message.Message = type == null
-            ? JsonNode.Parse(message.Body)!
-            : JsonSerializer.Deserialize(message.Body, type, JsonSerializerOptions)!;
+        incomingMessage.Message = JsonSerializer.Deserialize(incomingMessage.Body, incomingMessage.MessageType, JsonSerializerOptions)!;
 
         return next();
     }
 
     /// <summary>
-    /// If the message type is not in the list of known messages, throw an exception.
+    /// Serializes outgoing messages to JSON.
     /// </summary>
-    public bool ThrowOnInvalidType { get; set; } = true;
-
-    public Task Serializer(OutgoingTransaction transaction, Func<Task> next)
+    public virtual Task Serializer(OutgoingTransaction transaction, Func<Task> next)
     {
         foreach (var message in transaction.OutgoingMessages)
         {
             message.Body = JsonSerializer.Serialize(message.Message, JsonSerializerOptions);
-            message.Headers[Headers.ContentType] = ContentType;
-
-            var header = message.Bus.Messages.GetHeader(message.MessageType);
-
-            if (header != null)
-            {
-                message.Headers[Headers.MessageType] = header;
-            }
-            else if (ThrowOnInvalidType)
-            {
-                throw new InvalidOperationException("The header has an valid type.");
-            }
+            message.Headers[Header] = ContentType;
         }
         return next();
     }
