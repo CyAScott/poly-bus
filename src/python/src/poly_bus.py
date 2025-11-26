@@ -1,9 +1,15 @@
 """PolyBus implementation for the Python version."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 from src.i_poly_bus import IPolyBus
+from src.transport.i_transport import ITransport
 from src.transport.transaction.incoming_transaction import IncomingTransaction
 from src.transport.transaction.outgoing_transaction import OutgoingTransaction
+from src.transport.transaction.message.incoming_message import IncomingMessage
+from src.transport.transaction.message.messages import Messages
+from src.transport.transaction.message.handlers.incoming_handler import IncomingHandler
+from src.transport.transaction.message.handlers.outgoing_handler import OutgoingHandler
+from src.transport.transaction.transaction import Transaction
 
 
 class PolyBus(IPolyBus):
@@ -17,7 +23,7 @@ class PolyBus(IPolyBus):
             builder: The PolyBusBuilder containing the configuration
         """
         self._builder = builder
-        self._transport = None
+        self._transport: ITransport = None  # type: ignore
     
     @property
     def properties(self) -> Dict[str, Any]:
@@ -25,29 +31,27 @@ class PolyBus(IPolyBus):
         return self._builder.properties
     
     @property
-    def transport(self):
+    def transport(self) -> ITransport:
         """The transport mechanism used by this bus instance."""
-        if self._transport is None:
-            raise RuntimeError("Transport has not been initialized")
         return self._transport
     
     @transport.setter
-    def transport(self, value):
+    def transport(self, value: ITransport) -> None:
         """Set the transport mechanism used by this bus instance."""
         self._transport = value
     
     @property
-    def incoming_handlers(self):
+    def incoming_pipeline(self) -> List[IncomingHandler]:
         """Collection of handlers for processing incoming messages."""
-        return self._builder.incoming_handlers
+        return self._builder.incoming_pipeline
     
     @property
-    def outgoing_handlers(self):
+    def outgoing_pipeline(self) -> List[OutgoingHandler]:
         """Collection of handlers for processing outgoing messages."""
-        return self._builder.outgoing_handlers
+        return self._builder.outgoing_pipeline
     
     @property
-    def messages(self):
+    def messages(self) -> Messages:
         """Collection of message types and their associated headers."""
         return self._builder.messages
     
@@ -56,40 +60,73 @@ class PolyBus(IPolyBus):
         """The name of this bus instance."""
         return self._builder.name
     
-    async def create_transaction(self, message=None):
-        """Creates a new transaction, optionally based on an incoming message.
+    @property
+    def incoming_handlers(self) -> List[IncomingHandler]:
+        """Backwards-compatible alias for incoming_pipeline."""
+        return self.incoming_pipeline
+    
+    @property
+    def outgoing_handlers(self) -> List[OutgoingHandler]:
+        """Backwards-compatible alias for outgoing_pipeline."""
+        return self.outgoing_pipeline
+    
+    async def create_transaction(self, message: IncomingMessage = None):
+        """Backwards-compatible method to create transactions.
         
         Args:
-            message: Optional incoming message to create the transaction from.
+            message: Optional incoming message. If provided, creates an incoming transaction.
+                    If not provided, creates an outgoing transaction.
+                    
+        Returns:
+            Either an IncomingTransaction or OutgoingTransaction depending on whether message is provided.
+        """
+        if message is not None:
+            return await self.create_incoming_transaction(message)
+        else:
+            return await self.create_outgoing_transaction()
+    
+    async def create_incoming_transaction(self, message: IncomingMessage) -> IncomingTransaction:
+        """Creates a new incoming transaction based on an incoming message.
+        
+        Args:
+            message: The incoming message to create the transaction from.
             
         Returns:
-            A new transaction instance.
+            A new incoming transaction instance.
         """
-        return await self._builder.transaction_factory(self._builder, self, message)
+        return await self._builder.incoming_transaction_factory(self._builder, self, message)
     
-    async def send(self, transaction) -> None:
+    async def create_outgoing_transaction(self) -> OutgoingTransaction:
+        """Creates a new outgoing transaction.
+            
+        Returns:
+            A new outgoing transaction instance.
+        """
+        return await self._builder.outgoing_transaction_factory(self._builder, self)
+    
+    async def send(self, transaction: Transaction) -> None:
         """Sends messages associated with the given transaction to the transport.
         
         Args:
             transaction: The transaction containing messages to send.
         """
-        async def final_step():
+        async def final_step() -> None:
             """Final step that actually sends to transport."""
-            await self.transport.send(transaction)
+            await self.transport.handle(transaction)
         
         step = final_step
         
         # Build handler chain based on transaction type
         if isinstance(transaction, IncomingTransaction):
             # Process incoming handlers in reverse order
-            handlers = self.incoming_handlers
-            for i in range(len(handlers) - 1, -1, -1):
-                handler = handlers[i]
+            handlers = transaction.bus.incoming_pipeline
+            for index in range(len(handlers) - 1, -1, -1):
+                handler = handlers[index]
                 next_step = step
                 
                 # Fix closure issue by using default parameters
-                def create_step(h=handler, next_fn=next_step):
-                    async def handler_step():
+                def create_step(h: IncomingHandler = handler, next_fn = next_step) -> Any:
+                    async def handler_step() -> None:
                         await h(transaction, next_fn)
                     return handler_step
                 
@@ -97,14 +134,14 @@ class PolyBus(IPolyBus):
         
         elif isinstance(transaction, OutgoingTransaction):
             # Process outgoing handlers in reverse order
-            handlers = self.outgoing_handlers
-            for i in range(len(handlers) - 1, -1, -1):
-                handler = handlers[i]
+            handlers = transaction.bus.outgoing_pipeline
+            for index in range(len(handlers) - 1, -1, -1):
+                handler = handlers[index]
                 next_step = step
                 
                 # Fix closure issue by using default parameters
-                def create_step(h=handler, next_fn=next_step):
-                    async def handler_step():
+                def create_step(h: OutgoingHandler = handler, next_fn = next_step) -> Any:
+                    async def handler_step() -> None:
                         await h(transaction, next_fn)
                     return handler_step
                 

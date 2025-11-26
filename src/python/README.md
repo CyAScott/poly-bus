@@ -8,30 +8,6 @@ A Python implementation of the PolyBus messaging library, providing a unified in
 - pip (Python package installer)
 - Any IDE that supports Python development (VS Code, PyCharm, etc.)
 
-## Project Structure
-
-```
-src/python/
-├── src/                        # Source code
-│   ├── __init__.py             # Package initialization
-│   ├── i_poly_bus.py           # Main interface
-│   ├── poly_bus.py             # Core implementation
-│   ├── poly_bus_builder.py     # Builder pattern implementation
-│   ├── headers.py              # Message headers
-│   └── transport/              # Transport implementations
-│       ├── __init__.py
-│       └── i_transport.py      # Transport interface
-├── tests/                      # Test package
-│   ├── __init__.py
-│   ├── test_poly_bus.py        # Test implementations
-│   └── transport/              # Transport tests
-├── pyproject.toml              # Project configuration and dependencies
-├── requirements-dev.txt        # Development dependencies
-├── conftest.py                 # Pytest configuration
-├── dev.sh                      # Development workflow script
-└── setup.py                    # Legacy setup script
-```
-
 ## Quick Start
 
 ### Setting Up Development Environment
@@ -174,9 +150,9 @@ Pytest configuration includes:
 ./dev.sh help         # Show all available commands
 
 # Direct pytest commands
-python -m pytest                              # Run all tests
+python -m pytest                             # Run all tests
 python -m pytest --cov-report=html           # Generate HTML coverage report
-python -m pytest tests/test_poly_bus.py      # Run specific test file
+python -m pytest tests/example.py            # Run specific test file
 python -m pytest -x                          # Stop on first failure
 python -m pytest --lf                        # Run last failed tests only
 

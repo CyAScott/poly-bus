@@ -9,23 +9,33 @@ if TYPE_CHECKING:
     from src.poly_bus import PolyBus
 
 
-async def _default_transaction_factory(builder: 'PolyBusBuilder', bus, message: Optional = None):
+async def _default_incoming_transaction_factory(builder: 'PolyBusBuilder', bus, message):
     """
-    Default transaction factory implementation.
+    Default incoming transaction factory implementation.
     
     Args:
         builder: The PolyBus builder instance (not used in default implementation)
         bus: The PolyBus instance
-        message: The incoming message to process, if any
+        message: The incoming message to process
         
     Returns:
-        A new transaction instance
+        A new incoming transaction instance
     """
+    return IncomingTransaction(bus, message)
+
+
+async def _default_outgoing_transaction_factory(builder: 'PolyBusBuilder', bus):
+    """
+    Default outgoing transaction factory implementation.
     
-    if message is not None:
-        return IncomingTransaction(bus, message)
-    else:
-        return OutgoingTransaction(bus)
+    Args:
+        builder: The PolyBus builder instance (not used in default implementation)
+        bus: The PolyBus instance
+        
+    Returns:
+        A new outgoing transaction instance
+    """
+    return OutgoingTransaction(bus)
 
 
 async def _default_transport_factory(builder: 'PolyBusBuilder', bus: 'PolyBus'):
@@ -37,11 +47,11 @@ async def _default_transport_factory(builder: 'PolyBusBuilder', bus: 'PolyBus'):
         bus: The PolyBus instance
         
     Returns:
-        An InMemoryTransport endpoint for the bus
+        An InMemoryMessageBroker endpoint for the bus
     """
-    from .transport.in_memory.in_memory_transport import InMemoryTransport
+    from .transport.in_memory.in_memory_message_broker import InMemoryMessageBroker
     
-    transport = InMemoryTransport()
+    transport = InMemoryMessageBroker()
     return transport.add_endpoint(builder, bus)
 
 
@@ -50,10 +60,11 @@ class PolyBusBuilder:
     
     def __init__(self):
         """Initialize a new PolyBusBuilder with default settings."""
-        # The transaction factory will be used to create transactions for message handling.
-        # Transactions are used to ensure that a group of message related to a single request
-        # are sent to the transport in a single atomic operation.
-        self.transaction_factory = _default_transaction_factory
+        # The incoming transaction factory will be used to create incoming transactions for handling messages.
+        self.incoming_transaction_factory = _default_incoming_transaction_factory
+        
+        # The outgoing transaction factory will be used to create outgoing transactions for sending messages.
+        self.outgoing_transaction_factory = _default_outgoing_transaction_factory
         
         # The transport factory will be used to create the transport for the PolyBus instance.
         # The transport is responsible for sending and receiving messages.
@@ -63,16 +74,48 @@ class PolyBusBuilder:
         self.properties: Dict[str, Any] = {}
         
         # Collection of handlers for processing incoming messages
-        self.incoming_handlers = []
+        self.incoming_pipeline = []
         
         # Collection of handlers for processing outgoing messages
-        self.outgoing_handlers = []
+        self.outgoing_pipeline = []
         
         # Collection of message types and their associated headers
         self.messages = Messages()
         
         # The name of the bus instance
-        self.name: str = "PolyBusInstance"
+        self.name: str = "polybus"
+    
+    @property
+    def incoming_handlers(self):
+        """Backwards-compatible alias for incoming_pipeline."""
+        return self.incoming_pipeline
+    
+    @property
+    def outgoing_handlers(self):
+        """Backwards-compatible alias for outgoing_pipeline."""
+        return self.outgoing_pipeline
+    
+    @property
+    def transaction_factory(self):
+        """Backwards-compatible combined transaction factory."""
+        async def combined_factory(builder, bus, message=None):
+            if message is not None:
+                return await self.incoming_transaction_factory(builder, bus, message)
+            else:
+                return await self.outgoing_transaction_factory(builder, bus)
+        return combined_factory
+    
+    @transaction_factory.setter
+    def transaction_factory(self, value):
+        """Set both incoming and outgoing transaction factories from a combined factory."""
+        async def incoming_wrapper(builder, bus, message):
+            return await value(builder, bus, message)
+        
+        async def outgoing_wrapper(builder, bus):
+            return await value(builder, bus, None)
+        
+        self.incoming_transaction_factory = incoming_wrapper
+        self.outgoing_transaction_factory = outgoing_wrapper
     
     async def build(self) -> 'PolyBus':
         """
