@@ -7,27 +7,6 @@ A .NET implementation of the PolyBus messaging library, providing a unified inte
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 - Any IDE that supports .NET development (Visual Studio, VS Code, JetBrains Rider)
 
-## Project Structure
-
-```
-src/dotnet/
-├── PolyBus/                    # Main library project
-│   ├── PolyBus.csproj          # Project file
-│   ├── IPolyBus.cs             # Main interface
-│   ├── PolyBus.cs              # Core implementation
-│   ├── PolyBusBuilder.cs       # Builder pattern implementation
-│   ├── Headers.cs              # Message headers
-│   └── Transport/              # Transport implementations
-│       ├── ITransport.cs       # Transport interface
-│       └── TransportFactory.cs
-├── PloyBus.Tests/              # Test project
-│   ├── PloyBus.Tests.csproj    # Test project file
-│   └── PolyBusTests.cs         # Test implementations
-├── Directory.Build.props       # Common build properties
-├── PolyBus.slnx                # Solution file
-└── lint.sh                     # Code quality script
-```
-
 ## Quick Start
 
 ### Building the Project
