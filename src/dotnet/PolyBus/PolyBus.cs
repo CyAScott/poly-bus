@@ -11,22 +11,25 @@ public class PolyBus(PolyBusBuilder builder) : IPolyBus
 
     public ITransport Transport { get; set; } = null!;
 
-    public IList<IncomingHandler> IncomingHandlers { get; } = builder.IncomingHandlers;
+    public IList<IncomingHandler> IncomingPipeline { get; } = builder.IncomingPipeline;
 
-    public IList<OutgoingHandler> OutgoingHandlers { get; } = builder.OutgoingHandlers;
+    public IList<OutgoingHandler> OutgoingPipeline { get; } = builder.OutgoingPipeline;
 
     public Messages Messages { get; } = builder.Messages;
 
-    public Task<Transaction> CreateTransaction(IncomingMessage? message = null) =>
-        builder.TransactionFactory(builder, this, message);
+    public Task<IncomingTransaction> CreateIncomingTransaction(IncomingMessage message) =>
+        builder.IncomingTransactionFactory(builder, this, message);
+
+    public  Task<OutgoingTransaction> CreateOutgoingTransaction() =>
+        builder.OutgoingTransactionFactory(builder, this);
 
     public async Task Send(Transaction transaction)
     {
-        var step = () => Transport.Send(transaction);
+        var step = () => Transport.Handle(transaction);
 
         if (transaction is IncomingTransaction incomingTransaction)
         {
-            var handlers = transaction.Bus.IncomingHandlers;
+            var handlers = transaction.Bus.IncomingPipeline;
             for (var index = handlers.Count - 1; index >= 0; index--)
             {
                 var handler = handlers[index];
@@ -36,7 +39,7 @@ public class PolyBus(PolyBusBuilder builder) : IPolyBus
         }
         else if (transaction is OutgoingTransaction outgoingTransaction)
         {
-            var handlers = transaction.Bus.OutgoingHandlers;
+            var handlers = transaction.Bus.OutgoingPipeline;
             for (var index = handlers.Count - 1; index >= 0; index--)
             {
                 var handler = handlers[index];

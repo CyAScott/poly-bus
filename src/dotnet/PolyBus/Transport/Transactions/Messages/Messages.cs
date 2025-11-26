@@ -1,45 +1,41 @@
-using System.Collections.Concurrent;
 using System.Reflection;
 
 namespace PolyBus.Transport.Transactions.Messages;
 
 /// <summary>
-/// A collection of message types and their associated message headers.
+/// A collection of message types and their associated message headers and attributes.
 /// </summary>
 public class Messages
 {
-    readonly ConcurrentDictionary<string, Type?> _map = new();
-    readonly Dictionary<Type, (MessageInfo attribute, string header)> _types = [];
+    protected Dictionary<Type, (MessageInfo attribute, string header)> Types { get; } = [];
 
     /// <summary>
     /// Gets the message attribute associated with the specified type.
     /// </summary>
-    public virtual MessageInfo? GetMessageInfo(Type type) =>
-        _types.TryGetValue(type, out var value) ? value.attribute : null;
+    /// <returns>
+    /// The MessageInfoAttribute associated with the specified type.
+    /// </returns>
+    /// <exception cref="PolyBusMessageNotFoundError">
+    /// If no message attribute is found for the specified type.
+    /// </exception>
+    public virtual MessageInfo GetMessageInfo(Type type) =>
+        Types.TryGetValue(type, out var value)
+            ? value.attribute
+            : throw new PolyBusMessageNotFoundError();
 
     /// <summary>
-    /// Attempts to get the message type associated with the specified header.
+    /// Gets the message header associated with the specified attribute.
     /// </summary>
     /// <returns>
-    /// If found, returns the message type; otherwise, returns null.
+    /// The message header associated with the specified attribute.
     /// </returns>
-    public virtual Type? GetTypeByHeader(string header)
-    {
-        var attribute = MessageInfo.GetAttributeFromHeader(header);
-        return attribute == null ? null : _map.GetOrAdd(header, _ => _types
-            .Where(pair => pair.Value.attribute.Equals(attribute))
-            .Select(pair => pair.Key)
-            .FirstOrDefault());
-    }
-
-    /// <summary>
-    /// Attempts to get the message header associated with the specified type.
-    /// </summary>
-    /// <returns>
-    /// If found, returns the message header; otherwise, returns null.
-    /// </returns>
-    public virtual string? GetHeader(Type type) =>
-        _types.TryGetValue(type, out var value) ? value.header : null;
+    /// <exception cref="PolyBusMessageNotFoundError">
+    /// If no message header is found for the specified attribute.
+    /// </exception>
+    public virtual string GetHeaderByMessageInfo(MessageInfo messageInfo) =>
+        Types.Values.Any(it => it.attribute.Equals(messageInfo))
+            ? messageInfo.ToString(true)
+            : throw new PolyBusMessageNotFoundError();
 
     /// <summary>
     /// Adds a message type to the collection.
@@ -48,17 +44,20 @@ public class Messages
     /// <returns>
     /// The MessageAttribute associated with the message type.
     /// </returns>
-    /// <exception cref="ArgumentException">
-    ///Type {messageType.FullName} does not have a MessageAttribute
+    /// <exception cref="PolyBusMessageNotFoundError">
+    /// If the message type does not have a message info attribute defined.
     /// </exception>
     public virtual MessageInfo Add(Type messageType)
     {
         var attribute = messageType.GetCustomAttribute<MessageInfo>()
-                        ?? throw new ArgumentException($"Type {messageType.FullName} does not have a MessageAttribute.");
+                                   ?? throw new PolyBusMessageNotFoundError();
 
         var header = attribute.ToString(true);
-        _types.Add(messageType, (attribute, header));
-        _map.TryAdd(header, messageType);
+
+        if (!Types.TryAdd(messageType, (attribute, header)))
+        {
+            throw new PolyBusMessageNotFoundError();
+        }
 
         return attribute;
     }
@@ -67,11 +66,15 @@ public class Messages
     /// Attempts to get the message type associated with the specified attribute.
     /// </summary>
     /// <returns>
-    /// If found, returns the message type; otherwise, returns null.
+    /// The message type associated with the specified attribute.
     /// </returns>
-    public virtual Type? GetTypeByMessageInfo(MessageInfo messageInfo) =>
-        _types
+    /// <exception cref="PolyBusMessageNotFoundError">
+    /// If no message type is found for the specified message info attribute.
+    /// </exception>
+    public virtual Type GetTypeByMessageInfo(MessageInfo messageInfo) =>
+        Types
             .Where(it => it.Value.attribute.Equals(messageInfo))
             .Select(it => it.Key)
-            .FirstOrDefault();
+            .FirstOrDefault()
+        ?? throw new PolyBusMessageNotFoundError();
 }

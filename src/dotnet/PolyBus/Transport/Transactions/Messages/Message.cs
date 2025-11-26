@@ -18,5 +18,5 @@ public class Message(IPolyBus bus)
     /// <summary>
     /// The bus instance associated with the message.
     /// </summary>
-    public IPolyBus Bus => bus ?? throw new ArgumentNullException(nameof(bus));
+    public virtual IPolyBus Bus => bus ?? throw new ArgumentNullException(nameof(bus));
 }
