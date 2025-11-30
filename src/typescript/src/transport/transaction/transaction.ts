@@ -47,15 +47,12 @@ export class Transaction {
    * @param message The message object to be sent.
    * @returns The OutgoingMessage instance that was added.
    */
-  public addOutgoingMessage(message: any, endpoint: string | null = null): OutgoingMessage {
-    function getEndpoint(bus: IPolyBus): string {
-      const messageInfo = bus.messages.getMessageInfo(message.constructor);
-      if (!messageInfo) {
-        throw new Error(`Message type ${message.constructor.name} is not registered on bus ${bus.name}.`);
-      }
-      return messageInfo.endpoint;
-    }
-    const outgoingMessage = new OutgoingMessage(this._bus, message, endpoint ?? getEndpoint(this.bus));
+  public add(message: any, endpoint: string | undefined = undefined): OutgoingMessage {
+    const outgoingMessage = new OutgoingMessage(
+      this._bus,
+      message,
+      endpoint
+    );
     this._outgoingMessages.push(outgoingMessage);
     return outgoingMessage;
   }

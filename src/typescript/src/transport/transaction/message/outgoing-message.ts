@@ -1,5 +1,6 @@
 import { IPolyBus } from '../../../i-poly-bus';
 import { Message } from './message';
+import { MessageInfo } from './message-info';
 
 /**
  * Represents an outgoing message in the transport layer.
@@ -7,21 +8,43 @@ import { Message } from './message';
  */
 export class OutgoingMessage extends Message {
   private _body: string;
-  private _endpoint: string;
+  private _endpoint: string | undefined;
   private _message: any;
+  private _messageInfo: MessageInfo;
   private _messageType: Function;
 
   /**
    * Creates a new OutgoingMessage instance.
    * @param bus The bus instance associated with the message.
    * @param message The message object to be sent.
+   * @param endpoint An optional location to explicitly send the message to.
+   * @param messageInfo The message info describing metadata about the message.
    */
-  constructor(bus: IPolyBus, message: any, endpoint: string) {
+  constructor(bus: IPolyBus, message: any, endpoint?: string, messageInfo?: MessageInfo) {
     super(bus);
     this._message = message;
     this._messageType = message?.constructor || Object;
-    this._body = message?.toString() || '';
+    this._body = '';
     this._endpoint = endpoint;
+    this._messageInfo = messageInfo ?? bus.messages.getMessageInfo(message?.constructor) ?? new MessageInfo(
+      0 as any,
+      '',
+      '',
+      0,
+      0,
+      0
+    );
+  }
+
+  /**
+   * The message info describing metadata about the message.
+   */
+  public get messageInfo(): MessageInfo {
+    return this._messageInfo;
+  }
+
+  public set messageInfo(value: MessageInfo) {
+    this._messageInfo = value;
   }
 
   /**
@@ -58,17 +81,16 @@ export class OutgoingMessage extends Message {
   }
 
   /**
-   * If the message is a command then this is the endpoint the message is being sent to.
-   * If the message is an event then this is the source endpoint the message is being sent from.
+   * An optional location to explicitly send the message to.
    */
-  public get endpoint(): string {
+  public get endpoint(): string | undefined {
     return this._endpoint;
   }
 
   /**
    * Sets the endpoint for the message.
    */
-  public set endpoint(value: string) {
+  public set endpoint(value: string | undefined) {
     this._endpoint = value;
   }
 

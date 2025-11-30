@@ -1,11 +1,13 @@
 import { IPolyBus } from '../../../i-poly-bus';
 import { Message } from './message';
+import { MessageInfo } from './message-info';
 
 /**
  * Represents an incoming message in the transport layer.
  * Contains the message body, deserialized message object, and message type information.
  */
 export class IncomingMessage extends Message {
+  private _messageInfo: MessageInfo;
   private _messageType: any;
   private _body: string;
   private _message: any;
@@ -14,19 +16,34 @@ export class IncomingMessage extends Message {
    * Creates a new IncomingMessage instance.
    * @param bus The bus instance associated with the message.
    * @param body The message body contents.
-   * @param message The deserialized message object (optional, defaults to body).
-   * @param messageType The type of the message (optional, defaults to string).
+   * @param messageInfo The message info describing metadata about the message.
    */
-  constructor(bus: IPolyBus, body: string, message?: any, messageType?: any) {
+  constructor(bus: IPolyBus, body: string, messageInfo: MessageInfo) {
     super(bus);
 
     if (!body) {
       throw new Error('Body parameter cannot be null or undefined');
     }
 
+    if (!messageInfo) {
+      throw new Error('MessageInfo parameter cannot be null or undefined');
+    }
+
     this._body = body;
-    this._message = message ?? body;
-    this._messageType = messageType ?? String;
+    this._message = body;
+    this._messageInfo = messageInfo;
+    this._messageType = bus.messages.getTypeByMessageInfo(messageInfo);
+  }
+
+  /**
+   * The message info describing metadata about the message.
+   */
+  public get messageInfo(): MessageInfo {
+    return this._messageInfo;
+  }
+
+  public set messageInfo(value: MessageInfo) {
+    this._messageInfo = value;
   }
 
   /**

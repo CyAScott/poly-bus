@@ -1,4 +1,5 @@
 import { MessageInfo } from './message-info';
+import { PolyBusMessageNotFoundError } from './poly-bus-message-not-found-error';
 
 /**
  * Interface for storing message type and metadata information
@@ -9,57 +10,36 @@ interface MessageEntry {
 }
 
 /**
- * A collection of message types and their associated message headers.
+ * A collection of message types and their associated message headers and attributes.
  */
 export class Messages {
-  private readonly _map = new Map<string, Function | null>();
-  private readonly _types = new Map<Function, MessageEntry>();
+  protected types: Map<Function, MessageEntry> = new Map<Function, MessageEntry>();
 
   /**
    * Gets the message attribute associated with the specified type.
+   * @returns The MessageInfo associated with the specified type.
+   * @throws PolyBusMessageNotFoundError If no message attribute is found for the specified type.
    */
-  public getMessageInfo(type: Function): MessageInfo | null {
-    const entry = this._types.get(type);
-    return entry ? entry.attribute : null;
+  public getMessageInfo(type: Function): MessageInfo {
+    const entry = this.types.get(type);
+    if (!entry) {
+      throw new PolyBusMessageNotFoundError();
+    }
+    return entry.attribute;
   }
 
   /**
-   * Attempts to get the message type (constructor function) associated with the specified header.
-   * @param header The message header string to look up
-   * @returns If found, returns the message constructor function; otherwise, returns null.
+   * Gets the message header associated with the specified attribute.
+   * @returns The message header associated with the specified attribute.
+   * @throws PolyBusMessageNotFoundError If no message header is found for the specified attribute.
    */
-  public getTypeByHeader(header: string): Function | null {
-    const attribute = MessageInfo.getAttributeFromHeader(header);
-    if (!attribute) {
-      return null;
-    }
-
-    // Check if we already have this header cached
-    if (this._map.has(header)) {
-      return this._map.get(header) || null;
-    }
-
-    // Find the type that matches this attribute
-    for (const [type, entry] of this._types.entries()) {
-      if (entry.attribute.equals(attribute)) {
-        this._map.set(header, type);
-        return type;
+  public getHeaderByMessageInfo(messageInfo: MessageInfo): string {
+    for (const entry of this.types.values()) {
+      if (entry.attribute.equals(messageInfo)) {
+        return messageInfo.toString(true);
       }
     }
-
-    // Not found, cache null result
-    this._map.set(header, null);
-    return null;
-  }
-
-  /**
-   * Attempts to get the message header associated with the specified type.
-   * @param type The message constructor function to look up
-   * @returns If found, returns the message header; otherwise, returns null.
-   */
-  public getHeader(type: Function): string | null {
-    const entry = this._types.get(type);
-    return entry ? entry.header : null;
+    throw new PolyBusMessageNotFoundError();
   }
 
   /**
@@ -67,39 +47,39 @@ export class Messages {
    * The message type must have MessageInfo metadata defined via the @messageInfo decorator.
    * @param messageType The message constructor function to add
    * @returns The MessageInfo associated with the message type.
-   * @throws Error if the type does not have MessageInfo metadata
-   * @throws Error if the type has already been added
+   * @throws PolyBusMessageNotFoundError If the message type does not have a message info attribute defined.
+   * @throws PolyBusMessageNotFoundError If the type has already been added.
    */
   public add(messageType: Function): MessageInfo {
-    if (this._types.has(messageType)) {
-      throw new Error(`Type ${messageType.name} has already been added to the Messages collection.`);
-    }
-
     const attribute = MessageInfo.getMetadata(messageType);
     if (!attribute) {
-      throw new Error(`Type ${messageType.name} does not have MessageInfo metadata. Make sure to use the @messageInfo decorator.`);
+      throw new PolyBusMessageNotFoundError();
     }
 
     const header = attribute.toString(true);
     const entry: MessageEntry = { attribute, header };
 
-    this._types.set(messageType, entry);
-    this._map.set(header, messageType);
+    if (this.types.has(messageType)) {
+      throw new PolyBusMessageNotFoundError();
+    }
+
+    this.types.set(messageType, entry);
 
     return attribute;
   }
 
   /**
-   * Attempts to get the message type associated with the specified MessageInfo.
+   * Attempts to get the message type associated with the specified attribute.
    * @param messageInfo The MessageInfo to look up
-   * @returns If found, returns the message constructor function; otherwise, returns null.
+   * @returns The message type associated with the specified attribute.
+   * @throws PolyBusMessageNotFoundError If no message type is found for the specified message info attribute.
    */
-  public getTypeByMessageInfo(messageInfo: MessageInfo): Function | null {
-    for (const [type, entry] of this._types.entries()) {
+  public getTypeByMessageInfo(messageInfo: MessageInfo): Function {
+    for (const [type, entry] of this.types.entries()) {
       if (entry.attribute.equals(messageInfo)) {
         return type;
       }
     }
-    return null;
+    throw new PolyBusMessageNotFoundError();
   }
 }
