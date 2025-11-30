@@ -6,7 +6,8 @@ export default {
   
   // Test file patterns
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.ts',
+    '<rootDir>/src/**/__tests__/**/*.test.ts',
+    '<rootDir>/src/**/__tests__/**/*.spec.ts',
     '<rootDir>/src/**/?(*.)+(spec|test).ts'
   ],
   

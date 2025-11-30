@@ -8,35 +8,6 @@ A TypeScript implementation of the PolyBus messaging library, providing a unifie
 - npm or yarn package manager
 - Any IDE that supports TypeScript development (VS Code, WebStorm, etc.)
 
-## Project Structure
-
-```
-src/typescript/
-├── src/                        # Source code
-│   ├── index.ts                # Main entry point
-│   ├── i-poly-bus.ts           # Main interface
-│   ├── poly-bus.ts             # Core implementation
-│   ├── poly-bus-builder.ts     # Builder pattern implementation
-│   ├── headers.ts              # Message headers
-│   ├── transport/              # Transport implementations
-│   │   ├── i-transport.ts      # Transport interface
-│   │   └── ...
-│   └── __tests__/              # Test files
-│       ├── poly-bus.test.ts    # Test implementations
-│       └── headers.test.ts
-├── dist/                       # Compiled output
-│   ├── index.js                # CommonJS build
-│   ├── index.mjs               # ES Module build
-│   ├── index.umd.js            # UMD build (browser)
-│   └── index.d.ts              # TypeScript declarations
-├── package.json                # Project configuration and dependencies
-├── tsconfig.json               # TypeScript configuration
-├── jest.config.js              # Jest testing configuration
-├── eslint.config.js            # ESLint configuration
-├── rollup.config.js            # Rollup bundler configuration
-└── README.md                   # This file
-```
-
 ## Quick Start
 
 ### Installing Dependencies

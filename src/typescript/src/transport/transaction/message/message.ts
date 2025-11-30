@@ -5,8 +5,6 @@ import { IPolyBus } from '../../../i-poly-bus';
  * Contains state dictionary, headers, and reference to the bus instance.
  */
 export class Message {
-  private readonly _state: Map<string, any> = new Map<string, any>();
-  private _headers: Map<string, string> = new Map<string, string>();
   private readonly _bus: IPolyBus;
 
   /**
@@ -23,20 +21,12 @@ export class Message {
   /**
    * State dictionary that can be used to store arbitrary data associated with the message.
    */
-  public get state(): Map<string, any> {
-    return this._state;
-  }
+  public state: Map<string, any> = new Map<string, any>();
 
   /**
    * Message headers from the transport.
    */
-  public get headers(): Map<string, string> {
-    return this._headers;
-  }
-
-  public set headers(value: Map<string, string>) {
-    this._headers = value || new Map<string, string>();
-  }
+  public headers: Map<string, string> = new Map<string, string>();
 
   /**
    * The bus instance associated with the message.

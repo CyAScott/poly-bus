@@ -6,17 +6,31 @@ import { Transaction } from './transaction/transaction';
  */
 export interface ITransport {
 
+  /**
+   * Where messages that cannot be delivered are sent.
+   */
+  deadLetterEndpoint: string;
+
+  /**
+   * If the transport supports sending command messages, this will be true.
+   */
   supportsCommandMessages: boolean;
 
-  supportsDelayedMessages: boolean;
+  /**
+   * If the transport supports sending delayed commands, this will be true.
+   */
+  supportsDelayedCommands: boolean;
 
+  /**
+   * If the transport supports event message subscriptions, this will be true.
+   */
   supportsSubscriptions: boolean;
 
   /**
    * Sends messages associated with the given transaction to the transport.
    */
   // eslint-disable-next-line no-unused-vars
-  send(transaction: Transaction): Promise<void>;
+  handle(transaction: Transaction): Promise<void>;
 
   /**
    * Subscribes to a messages so that the transport can start receiving them.
@@ -25,7 +39,7 @@ export interface ITransport {
   subscribe(messageInfo: MessageInfo): Promise<void>;
 
   /**
-   * Enables the transport to start processing messages.
+   * Starts the transport to start processing messages.
    */
   start(): Promise<void>;
 

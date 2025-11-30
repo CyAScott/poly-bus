@@ -4,6 +4,8 @@ import { ITransport } from './transport/i-transport';
 import { Messages } from './transport/transaction/message/messages';
 import { OutgoingHandler } from './transport/transaction/message/handlers/outgoing-handler';
 import { Transaction } from './transport/transaction/transaction';
+import { IncomingTransaction } from './transport/transaction/incoming-transaction';
+import { OutgoingTransaction } from './transport/transaction/outgoing-transaction';
 
 export interface IPolyBus {
   /**
@@ -19,12 +21,12 @@ export interface IPolyBus {
   /**
    * Collection of handlers for processing incoming messages.
    */
-  incomingHandlers: IncomingHandler[];
+  incomingPipeline: IncomingHandler[];
 
   /**
    * Collection of handlers for processing outgoing messages.
    */
-  outgoingHandlers: OutgoingHandler[];
+  outgoingPipeline: OutgoingHandler[];
 
   /**
    * Collection of message types and their associated headers.
@@ -32,11 +34,17 @@ export interface IPolyBus {
   messages: Messages;
 
   /**
-   * Creates a new transaction, optionally based on an incoming message.
-   * @param message Optional incoming message to create the transaction from.
-   * @returns A promise that resolves to the created transaction.
+   * Creates a new incoming transaction.
+   * @param incoming message to create the transaction from.
+   * @returns A promise that resolves to the created incoming transaction.
    */
-  createTransaction(message?: IncomingMessage): Promise<Transaction>;
+  createIncomingTransaction(message: IncomingMessage): Promise<IncomingTransaction>;
+
+  /**
+   * Creates a new outgoing transaction.
+   * @returns A promise that resolves to the created outgoing transaction.
+   */
+  createOutgoingTransaction(): Promise<OutgoingTransaction>;
 
   /**
    * Sends messages associated with the given transaction to the transport.

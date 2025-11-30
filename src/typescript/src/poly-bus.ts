@@ -14,8 +14,8 @@ import { PolyBusBuilder } from './poly-bus-builder';
  */
 export class PolyBus implements IPolyBus {
   private _transport!: ITransport;
-  private readonly _incomingHandlers: IncomingHandler[];
-  private readonly _outgoingHandlers: OutgoingHandler[];
+  private readonly _incomingPipeline: IncomingHandler[];
+  private readonly _outgoingPipeline: OutgoingHandler[];
   private readonly _messages: Messages;
   private readonly _name: string;
   private readonly _builder: PolyBusBuilder;
@@ -26,8 +26,8 @@ export class PolyBus implements IPolyBus {
    */
   constructor(builder: PolyBusBuilder) {
     this._builder = builder;
-    this._incomingHandlers = builder.incomingHandlers;
-    this._outgoingHandlers = builder.outgoingHandlers;
+    this._incomingPipeline = builder.incomingPipeline;
+    this._outgoingPipeline = builder.outgoingPipeline;
     this._messages = builder.messages;
     this._name = builder.name;
   }
@@ -53,15 +53,15 @@ export class PolyBus implements IPolyBus {
   /**
    * Collection of handlers for processing incoming messages.
    */
-  public get incomingHandlers(): IncomingHandler[] {
-    return this._incomingHandlers;
+  public get incomingPipeline(): IncomingHandler[] {
+    return this._incomingPipeline;
   }
 
   /**
    * Collection of handlers for processing outgoing messages.
    */
-  public get outgoingHandlers(): OutgoingHandler[] {
-    return this._outgoingHandlers;
+  public get outgoingPipeline(): OutgoingHandler[] {
+    return this._outgoingPipeline;
   }
 
   /**
@@ -79,12 +79,20 @@ export class PolyBus implements IPolyBus {
   }
 
   /**
-   * Creates a new transaction, optionally based on an incoming message.
-   * @param message Optional incoming message to create the transaction from.
-   * @returns A promise that resolves to the created transaction.
+   * Creates a new incoming transaction.
+   * @param message Incoming message to create the transaction from.
+   * @returns A promise that resolves to the created incoming transaction.
    */
-  public async createTransaction(message?: IncomingMessage): Promise<Transaction> {
-    return this._builder.transactionFactory(this._builder, this, message);
+  public async createIncomingTransaction(message: IncomingMessage): Promise<IncomingTransaction> {
+    return this._builder.incomingTransactionFactory(this._builder, this, message);
+  }
+
+  /**
+   * Creates a new outgoing transaction.
+   * @returns A promise that resolves to the created outgoing transaction.
+   */
+  public async createOutgoingTransaction(): Promise<OutgoingTransaction> {
+    return this._builder.outgoingTransactionFactory(this._builder, this);
   }
 
   /**
@@ -94,17 +102,17 @@ export class PolyBus implements IPolyBus {
    * @returns A promise that resolves when the messages have been sent.
    */
   public async send(transaction: Transaction): Promise<void> {
-    let step = () => this.transport.send(transaction);
+    let step = () => this.transport.handle(transaction);
 
     if (transaction instanceof IncomingTransaction) {
-      const handlers = transaction.bus.incomingHandlers;
+      const handlers = transaction.bus.incomingPipeline;
       for (let index = handlers.length - 1; index >= 0; index--) {
         const handler = handlers[index];
         const next = step;
         step = () => handler(transaction, next);
       }
     } else if (transaction instanceof OutgoingTransaction) {
-      const handlers = transaction.bus.outgoingHandlers;
+      const handlers = transaction.bus.outgoingPipeline;
       for (let index = handlers.length - 1; index >= 0; index--) {
         const handler = handlers[index];
         const next = step;

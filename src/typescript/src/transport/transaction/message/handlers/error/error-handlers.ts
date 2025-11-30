@@ -1,48 +1,55 @@
 import { IncomingTransaction } from '../../../incoming-transaction';
+import { OutgoingMessage } from '../../outgoing-message';
 
 /**
- * Handles error scenarios for message processing, including retries and dead letter queues.
+ * A handler for processing message errors with retry logic.
  */
 export class ErrorHandler {
-  public static readonly ErrorMessageHeader = 'X-Error-Message';
-  public static readonly ErrorStackTraceHeader = 'X-Error-Stack-Trace';
-  public static readonly RetryCountHeader = 'X-Retry-Count';
-
   /**
-   * The delay in seconds between retry attempts.
-   * @default 30
+   * The logger instance to use for logging.
    */
-  public delay: number = 30;
+  public log: typeof console = console;
 
   /**
-   * The number of delayed retry attempts.
-   * @default 3
+   * The delay increment in seconds for each delayed retry attempt.
+   * The delay is calculated as: delay attempt number * delay increment.
+   */
+  public delayIncrement: number = 30;
+
+  /**
+   * How many delayed retry attempts to make before sending to the dead-letter queue.
    */
   public delayedRetryCount: number = 3;
 
   /**
-   * The number of immediate retry attempts.
-   * @default 3
+   * How many immediate retry attempts to make before applying delayed retries.
    */
   public immediateRetryCount: number = 3;
 
   /**
-   * The endpoint to send messages to when all retries are exhausted.
-   * If not specified, defaults to {busName}.Errors
+   * The header key for storing error messages in dead-lettered messages.
    */
-  public deadLetterEndpoint?: string;
+  public errorMessageHeader: string = 'x-error-message';
 
   /**
-   * Retry handler that implements immediate and delayed retry logic.
-   * @param transaction The incoming transaction to process.
-   * @param next The next function in the pipeline to execute.
+   * The header key for storing error stack traces in dead-lettered messages.
+   */
+  public errorStackTraceHeader: string = 'x-error-stack-trace';
+
+  /**
+   * The header key for storing the delayed retry count.
+   */
+  public retryCountHeader: string = 'x-retry-count';
+
+  /**
+   * Retries the processing of a message according to the configured retry logic.
    */
   public async retrier(
     transaction: IncomingTransaction,
     next: () => Promise<void>
   ): Promise<void> {
-    const headerValue = transaction.incomingMessage.headers.get(ErrorHandler.RetryCountHeader);
-    const delayedAttempt = headerValue ? parseInt(headerValue, 10) || 0 : 0;
+    const headerValue = transaction.incomingMessage.headers.get(this.retryCountHeader);
+    let delayedAttempt = headerValue ? parseInt(headerValue, 10) || 0 : 0;
     const delayedRetryCount = Math.max(1, this.delayedRetryCount);
     const immediateRetryCount = Math.max(1, this.immediateRetryCount);
 
@@ -51,46 +58,56 @@ export class ErrorHandler {
         await next();
         break;
       } catch (error) {
-        transaction.outgoingMessages.length = 0; // Clear outgoing messages
+        this.log.error(
+          `Error processing message ${transaction.incomingMessage.messageInfo} (immediate attempts: ${immediateAttempt}, delayed attempts: ${delayedAttempt}): ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        transaction.outgoingMessages.length = 0;
 
         if (immediateAttempt < immediateRetryCount - 1) {
           continue;
         }
 
-        if (delayedAttempt < delayedRetryCount) {
+        if (transaction.incomingMessage.bus.transport.supportsDelayedCommands
+          && delayedAttempt < delayedRetryCount) {
           // Re-queue the message with a delay
-          const nextDelayedAttempt = delayedAttempt + 1;
-
-          const delayedMessage = transaction.addOutgoingMessage(
+          delayedAttempt++;
+          const delayedMessage = new OutgoingMessage(
+            transaction.bus,
             transaction.incomingMessage.message,
-            transaction.bus.name
+            transaction.bus.name,
+            transaction.incomingMessage.messageInfo
           );
-          delayedMessage.deliverAt = this.getNextRetryTime(nextDelayedAttempt);
-          delayedMessage.headers.set(ErrorHandler.RetryCountHeader, nextDelayedAttempt.toString());
+          delayedMessage.deliverAt = this.getNextRetryTime(delayedAttempt);
+          transaction.incomingMessage.headers.forEach((value, key) => {
+            delayedMessage.headers.set(key, value);
+          });
+          delayedMessage.headers.set(this.retryCountHeader, delayedAttempt.toString());
+          transaction.outgoingMessages.push(delayedMessage);
 
           continue;
         }
 
-        const deadLetterEndpoint = this.deadLetterEndpoint ?? `${transaction.bus.name}.Errors`;
-        const deadLetterMessage = transaction.addOutgoingMessage(
+        const deadLetterMessage = new OutgoingMessage(
+          transaction.bus,
           transaction.incomingMessage.message,
-          deadLetterEndpoint
+          transaction.bus.transport.deadLetterEndpoint,
+          transaction.incomingMessage.messageInfo
         );
-        deadLetterMessage.headers.set(ErrorHandler.ErrorMessageHeader, error instanceof Error ? error.message : String(error));
+        transaction.incomingMessage.headers.forEach((value, key) => {
+          deadLetterMessage.headers.set(key, value);
+        });
+        deadLetterMessage.headers.set(this.errorMessageHeader, error instanceof Error ? error.message : String(error));
         deadLetterMessage.headers.set(
-          ErrorHandler.ErrorStackTraceHeader,
+          this.errorStackTraceHeader,
           error instanceof Error ? error.stack ?? '' : ''
         );
+        transaction.outgoingMessages.push(deadLetterMessage);
       }
     }
   }
 
-  /**
-   * Calculates the next retry time based on the attempt number.
-   * @param attempt The current attempt number.
-   * @returns The Date when the next retry should be attempted.
-   */
   public getNextRetryTime(attempt: number): Date {
-    return new Date(Date.now() + attempt * this.delay * 1000);
+    return new Date(Date.now() + attempt * this.delayIncrement * 1000);
   }
 }

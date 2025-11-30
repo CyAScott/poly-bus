@@ -4,10 +4,12 @@ import { ITransport } from './transport/i-transport';
 import { IncomingHandler } from './transport/transaction/message/handlers/incoming-handler';
 import { OutgoingHandler } from './transport/transaction/message/handlers/outgoing-handler';
 import { Messages } from './transport/transaction/message/messages';
-import { TransactionFactory } from './transport/transaction/transaction-factory';
+import { IncomingTransactionFactory } from './transport/transaction/incoming-transaction-factory';
+import { OutgoingTransactionFactory } from './transport/transaction/outgoing-transaction-factory';
 import { IncomingTransaction } from './transport/transaction/incoming-transaction';
 import { OutgoingTransaction } from './transport/transaction/outgoing-transaction';
 import { PolyBus } from './poly-bus';
+import { InMemoryMessageBroker } from './transport/in-memory/in-memory-message-broker';
 
 /**
  * A factory method for creating the transport for the PolyBus instance.
@@ -19,94 +21,53 @@ export type TransportFactory = (builder: PolyBusBuilder, bus: IPolyBus) => Promi
  * Builder class for configuring and creating PolyBus instances.
  */
 export class PolyBusBuilder {
-  private _transactionFactory: TransactionFactory;
-  private _transportFactory: TransportFactory;
-  private readonly _incomingHandlers: IncomingHandler[] = [];
-  private readonly _outgoingHandlers: OutgoingHandler[] = [];
-  private readonly _messages: Messages = new Messages();
-  private _name: string = 'PolyBusInstance';
+  /**
+   * The incoming transaction factory will be used to create incoming transactions for handling messages.
+   */
+  public incomingTransactionFactory: IncomingTransactionFactory = (_, bus, message) => {
+    return Promise.resolve(new IncomingTransaction(bus, message));
+  };
 
   /**
-   * Creates a new PolyBusBuilder instance.
+   * The outgoing transaction factory will be used to create outgoing transactions for sending messages.
    */
-  constructor() {
-    // Default transaction factory - creates IncomingTransaction for incoming messages,
-    // OutgoingTransaction for outgoing messages
-    this._transactionFactory = (_, bus, message) => {
-      return Promise.resolve(
-        message != null
-          ? new IncomingTransaction(bus, message)
-          : new OutgoingTransaction(bus)
-      );
-    };
-
-    // Default transport factory - should be overridden by specific transport implementations
-    this._transportFactory = async (_builder, _bus) => {
-      throw new Error('Transport factory must be configured before building PolyBus. Use a transport-specific builder method.');
-    };
-  }
-
-  /**
-   * The transaction factory will be used to create transactions for message handling.
-   * Transactions are used to ensure that a group of messages related to a single request
-   * are sent to the transport in a single atomic operation.
-   */
-  public get transactionFactory(): TransactionFactory {
-    return this._transactionFactory;
-  }
-
-  public set transactionFactory(value: TransactionFactory) {
-    this._transactionFactory = value;
-  }
+  public outgoingTransactionFactory: OutgoingTransactionFactory = (_, bus) => {
+    return Promise.resolve(new OutgoingTransaction(bus));
+  };
 
   /**
    * The transport factory will be used to create the transport for the PolyBus instance.
    * The transport is responsible for sending and receiving messages.
    */
-  public get transportFactory(): TransportFactory {
-    return this._transportFactory;
-  }
-
-  public set transportFactory(value: TransportFactory) {
-    this._transportFactory = value;
-  }
+  public transportFactory: TransportFactory = async (builder, bus) => {
+    const transport = new InMemoryMessageBroker();
+    return transport.addEndpoint(builder, bus);
+  };
 
   /**
    * The properties associated with this bus instance.
    */
-  properties: Map<string, object> = new Map<string, object>();
+  public properties: Map<string, object> = new Map<string, object>();
 
   /**
    * Collection of handlers for processing incoming messages.
    */
-  public get incomingHandlers(): IncomingHandler[] {
-    return this._incomingHandlers;
-  }
+  public incomingPipeline: IncomingHandler[] = [];
 
   /**
    * Collection of handlers for processing outgoing messages.
    */
-  public get outgoingHandlers(): OutgoingHandler[] {
-    return this._outgoingHandlers;
-  }
+  public outgoingPipeline: OutgoingHandler[] = [];
 
   /**
    * Collection of message types and their associated headers.
    */
-  public get messages(): Messages {
-    return this._messages;
-  }
+  public messages: Messages = new Messages();
 
   /**
    * The name of this bus instance.
    */
-  public get name(): string {
-    return this._name;
-  }
-
-  public set name(value: string) {
-    this._name = value;
-  }
+  public name: string = 'polybus';
 
   /**
    * Builds and configures a new PolyBus instance.
@@ -114,7 +75,7 @@ export class PolyBusBuilder {
    */
   public async build(): Promise<IPolyBus> {
     const bus = new PolyBus(this);
-    bus.transport = await this._transportFactory(this, bus);
+    bus.transport = await this.transportFactory(this, bus);
     return bus;
   }
 }
