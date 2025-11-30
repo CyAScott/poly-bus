@@ -2,6 +2,18 @@ import { describe, it, expect } from '@jest/globals';
 import { Headers } from '../headers';
 
 describe('Headers', () => {
+  describe('CorrelationId', () => {
+    it('should have the correct correlation id header name', () => {
+      expect(Headers.CorrelationId).toBe('correlation-id');
+    });
+
+    it('should be a readonly property', () => {
+      // This test ensures the property is static and readonly
+      expect(typeof Headers.CorrelationId).toBe('string');
+      expect(Headers.CorrelationId).toBeDefined();
+    });
+  });
+
   describe('ContentType', () => {
     it('should have the correct content-type header name', () => {
       expect(Headers.ContentType).toBe('content-type');
@@ -23,6 +35,18 @@ describe('Headers', () => {
       // This test ensures the property is static and readonly
       expect(typeof Headers.MessageType).toBe('string');
       expect(Headers.MessageType).toBeDefined();
+    });
+  });
+
+  describe('RequestId', () => {
+    it('should have the correct request id header name', () => {
+      expect(Headers.RequestId).toBe('request-id');
+    });
+
+    it('should be a readonly property', () => {
+      // This test ensures the property is static and readonly
+      expect(typeof Headers.RequestId).toBe('string');
+      expect(Headers.RequestId).toBeDefined();
     });
   });
 

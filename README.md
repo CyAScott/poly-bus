@@ -49,8 +49,8 @@ const bus = await builder.build();
 await bus.start();
 
 // Send a message
-const transaction = await bus.createTransaction();
-transaction.addOutgoingMessage({ type: 'UserCreated', userId: 123 });
+const transaction = await bus.createOutgoingTransaction();
+transaction.add({ type: 'UserCreated', userId: 123 });
 await transaction.commit();
 
 await bus.stop();
@@ -75,8 +75,8 @@ bus = await builder.build()
 await bus.start()
 
 # Send a message
-transaction = await bus.create_transaction()
-transaction.add_outgoing_message({'type': 'UserCreated', 'user_id': 123})
+transaction = await bus.create_outgoing_transaction()
+transaction.add({'type': 'UserCreated', 'user_id': 123})
 await transaction.commit()
 
 await bus.stop()
@@ -104,8 +104,8 @@ var bus = await builder.Build();
 await bus.Start();
 
 // Send a message
-var transaction = await bus.CreateTransaction();
-transaction.AddOutgoingMessage(new { Type = "UserCreated", UserId = 123 });
+var transaction = await bus.CreateOutgoingTransaction();
+transaction.Add(new { Type = "UserCreated", UserId = 123 });
 await transaction.Commit();
 
 await bus.Stop();
