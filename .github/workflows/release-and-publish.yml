@@ -154,23 +154,22 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Download TypeScript artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: typescript-package
-          path: src/typescript/dist/
+      - name: Install dependencies
+        working-directory: src/typescript
+        run: npm ci
 
       - name: Update package version
         working-directory: src/typescript
         run: |
           npm version ${{ needs.determine-version.outputs.version }} --no-git-tag-version
 
+      - name: Build package
+        working-directory: src/typescript
+        run: npm run build
+
       - name: Publish to npm
         working-directory: src/typescript
-        run: |
-          npm ci
-          npm run build
-          npm publish
+        run: npm publish --provenance --access public
 
   # Publish to PyPI
   publish-pypi:
