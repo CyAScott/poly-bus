@@ -1,8 +1,8 @@
 from typing import Any, Optional, Type
 from datetime import datetime
-from src.transport.transaction.message.message import Message
-from src.transport.transaction.message.message_info import MessageInfo
-from src.i_poly_bus import IPolyBus
+from .message import Message
+from .message_info import MessageInfo
+from ....i_poly_bus import IPolyBus
 
 
 class OutgoingMessage(Message):

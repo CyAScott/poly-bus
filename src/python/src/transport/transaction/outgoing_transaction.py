@@ -1,7 +1,7 @@
 """Outgoing transaction class for PolyBus Python implementation."""
 
-from src.transport.transaction.transaction import Transaction
-from src.i_poly_bus import IPolyBus
+from .transaction import Transaction
+from ...i_poly_bus import IPolyBus
 
 
 class OutgoingTransaction(Transaction):

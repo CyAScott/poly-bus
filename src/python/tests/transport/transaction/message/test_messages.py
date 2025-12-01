@@ -4,7 +4,7 @@ Tests for the Messages class.
 import pytest
 from src.transport.transaction.message.messages import Messages
 from src.transport.transaction.message.message_info import MessageInfo, message_info
-from src.transport.transaction.message.message_info import MessageType
+from src.transport.transaction.message.message_type import MessageType
 from src.transport.transaction.message.poly_bus_message_not_found_error import PolyBusMessageNotFoundError
 
 

@@ -2,8 +2,8 @@
 
 from typing import Dict, List, Any, Optional
 from abc import ABC
-from src.transport.transaction.message.outgoing_message import OutgoingMessage
-from src.i_poly_bus import IPolyBus
+from .message.outgoing_message import OutgoingMessage
+from ...i_poly_bus import IPolyBus
 
 
 class Transaction(ABC):

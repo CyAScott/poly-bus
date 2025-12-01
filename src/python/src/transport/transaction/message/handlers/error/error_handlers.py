@@ -4,8 +4,8 @@ import logging
 import traceback
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Awaitable
-from src.transport.transaction.incoming_transaction import IncomingTransaction
-from src.transport.transaction.message.outgoing_message import OutgoingMessage
+from ....incoming_transaction import IncomingTransaction
+from ...outgoing_message import OutgoingMessage
 
 
 class ErrorHandler:

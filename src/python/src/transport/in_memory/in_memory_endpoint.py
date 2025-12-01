@@ -4,12 +4,12 @@ An implementation of an in-memory transport endpoint.
 """
 
 from typing import Callable, Optional, Dict
-from src.i_poly_bus import IPolyBus
-from src.transport.i_transport import ITransport
-from src.transport.transaction.transaction import Transaction
-from src.transport.transaction.message.incoming_message import IncomingMessage
-from src.transport.transaction.message.message_info import MessageInfo
-from src.transport.poly_bus_not_started_error import PolyBusNotStartedError
+from ...i_poly_bus import IPolyBus
+from ..i_transport import ITransport
+from ..transaction.transaction import Transaction
+from ..transaction.message.incoming_message import IncomingMessage
+from ..transaction.message.message_info import MessageInfo
+from ..poly_bus_not_started_error import PolyBusNotStartedError
 
 
 class InMemoryEndpoint(ITransport):

@@ -4,14 +4,14 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.transport.i_transport import ITransport
-    from src.transport.transaction.message.handlers.incoming_handler import IncomingHandler
-    from src.transport.transaction.message.handlers.outgoing_handler import OutgoingHandler
-    from src.transport.transaction.message.incoming_message import IncomingMessage
-    from src.transport.transaction.message.messages import Messages
-    from src.transport.transaction.transaction import Transaction
-    from src.transport.transaction.incoming_transaction import IncomingTransaction
-    from src.transport.transaction.outgoing_transaction import OutgoingTransaction
+    from transport.i_transport import ITransport
+    from transport.transaction.message.handlers.incoming_handler import IncomingHandler
+    from transport.transaction.message.handlers.outgoing_handler import OutgoingHandler
+    from transport.transaction.message.incoming_message import IncomingMessage
+    from transport.transaction.message.messages import Messages
+    from transport.transaction.transaction import Transaction
+    from transport.transaction.incoming_transaction import IncomingTransaction
+    from transport.transaction.outgoing_transaction import OutgoingTransaction
 
 
 class IPolyBus(ABC):

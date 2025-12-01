@@ -1,7 +1,7 @@
 """Outgoing transaction factory for creating outgoing transactions in the PolyBus Python implementation."""
 
 from typing import Callable, Awaitable
-from src.transport.transaction.outgoing_transaction import OutgoingTransaction
+from .outgoing_transaction import OutgoingTransaction
 
 OutgoingTransactionFactory = Callable[
     ['PolyBusBuilder', 'IPolyBus'],

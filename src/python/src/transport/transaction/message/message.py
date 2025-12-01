@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from src.i_poly_bus import IPolyBus
+from ....i_poly_bus import IPolyBus
 
 
 class Message:
