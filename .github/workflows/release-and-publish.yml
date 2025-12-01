@@ -137,46 +137,46 @@ jobs:
           path: src/dotnet/PolyBus/nupkg/
 
   # Publish to npm
-  publish-npm:
-    name: Publish to npm
-    runs-on: ubuntu-latest
-    needs: [determine-version, build-and-test]
-    if: needs.determine-version.outputs.should_release == 'true'
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # publish-npm:
+  #   name: Publish to npm
+  #   runs-on: ubuntu-latest
+  #   needs: [determine-version, build-and-test]
+  #   if: needs.determine-version.outputs.should_release == 'true'
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        working-directory: src/typescript
-        run: npm ci
+  #     - name: Install dependencies
+  #       working-directory: src/typescript
+  #       run: npm ci
 
-      - name: Update package version
-        working-directory: src/typescript
-        run: |
-          npm version ${{ needs.determine-version.outputs.version }} --no-git-tag-version
+  #     - name: Update package version
+  #       working-directory: src/typescript
+  #       run: |
+  #         npm version ${{ needs.determine-version.outputs.version }} --no-git-tag-version
 
-      - name: Build package
-        working-directory: src/typescript
-        run: npm run build
+  #     - name: Build package
+  #       working-directory: src/typescript
+  #       run: npm run build
 
-      - name: Publish to npm
-        working-directory: src/typescript
-        run: npm publish --access public
+  #     - name: Publish to npm
+  #       working-directory: src/typescript
+  #       run: npm publish --access public
 
   # Publish to PyPI
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [publish-npm, determine-version, build-and-test]
+    needs: [determine-version, build-and-test]
     if: needs.determine-version.outputs.should_release == 'true'
     permissions:
       id-token: write
@@ -212,7 +212,7 @@ jobs:
   publish-nuget:
     name: Publish to NuGet
     runs-on: ubuntu-latest
-    needs: [publish-npm, determine-version, build-and-test]
+    needs: [determine-version, build-and-test]
     if: needs.determine-version.outputs.should_release == 'true'
     steps:
       - name: Checkout code
@@ -245,7 +245,7 @@ jobs:
   publish-summary:
     name: Publish Summary
     runs-on: ubuntu-latest
-    needs: [determine-version, publish-npm, publish-pypi, publish-nuget]
+    needs: [determine-version, publish-pypi, publish-nuget]
     if: always() && needs.determine-version.outputs.should_release == 'true'
     steps:
       - name: Summary
