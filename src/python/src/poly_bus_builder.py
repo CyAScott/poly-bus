@@ -1,12 +1,12 @@
 """PolyBus builder implementation for the Python version."""
 
 from typing import Dict, Any, Optional, TYPE_CHECKING
-from src.transport.transaction.incoming_transaction import IncomingTransaction
-from src.transport.transaction.message.messages import Messages
-from src.transport.transaction.outgoing_transaction import OutgoingTransaction
+from .transport.transaction.incoming_transaction import IncomingTransaction
+from .transport.transaction.message.messages import Messages
+from .transport.transaction.outgoing_transaction import OutgoingTransaction
 
 if TYPE_CHECKING:
-    from src.poly_bus import PolyBus
+    from .poly_bus import PolyBus
 
 
 async def _default_incoming_transaction_factory(builder: 'PolyBusBuilder', bus, message):
@@ -124,7 +124,7 @@ class PolyBusBuilder:
         Returns:
             A configured PolyBus instance ready for use
         """
-        from src.poly_bus import PolyBus
+        from .poly_bus import PolyBus
         
         bus = PolyBus(self)
         bus.transport = await self.transport_factory(self, bus)

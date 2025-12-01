@@ -16,14 +16,15 @@ A Python implementation of the PolyBus messaging library, providing a unified in
 # Navigate to the python directory
 cd src/python
 
-# Create a virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# The project uses a virtual environment at the repo root
+# It should already be configured by VS Code
+# If needed, activate it:
+source ../../.venv/bin/activate  # On Windows: ..\..\\.venv\Scripts\activate
 
 # Install the package in development mode with dev dependencies
-./dev.sh install
-# Or manually:
 pip install -e ".[dev]"
+# Or use the dev script with PYTHON env var:
+# PYTHON=../../.venv/bin/python ./dev.sh install
 ```
 
 ### Building the Project
@@ -39,13 +40,16 @@ pip install -e ".[dev]"
 ### Running Tests
 
 ```bash
+# Activate virtual environment first
+source ../../.venv/bin/activate  # On Windows: .venv\Scripts\activate
+
 # Run all tests
-./dev.sh test
-# Or: python -m pytest
+python -m pytest
+# Or: ./dev.sh test (if PYTHON env var is set)
 
 # Run tests with coverage
-./dev.sh test-cov
-# Or: python -m pytest --cov=poly_bus --cov-report=html
+python -m pytest --cov=src --cov-report=html --cov-report=term
+# Or: ./dev.sh test-cov
 
 # Run specific test files
 python -m pytest tests/test_poly_bus.py

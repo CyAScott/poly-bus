@@ -1,7 +1,7 @@
 """
 Exception raised when a requested type, attribute/decorator, or header is not found.
 """
-from src.poly_bus_error import PolyBusError
+from ....poly_bus_error import PolyBusError
 
 
 class PolyBusMessageNotFoundError(PolyBusError):

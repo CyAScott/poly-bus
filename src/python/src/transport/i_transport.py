@@ -1,8 +1,8 @@
 """Transport interface for the PolyBus Python implementation."""
 
 from abc import ABC, abstractmethod
-from src.transport.transaction.transaction import Transaction
-from src.transport.transaction.message.message_info import MessageInfo
+from .transaction.transaction import Transaction
+from .transaction.message.message_info import MessageInfo
 
 
 class ITransport(ABC):

@@ -1,8 +1,8 @@
 """Incoming transaction factory for creating incoming transactions in the PolyBus Python implementation."""
 
 from typing import Callable, Awaitable
-from src.transport.transaction.incoming_transaction import IncomingTransaction
-from src.transport.transaction.message.incoming_message import IncomingMessage
+from .incoming_transaction import IncomingTransaction
+from .message.incoming_message import IncomingMessage
 
 IncomingTransactionFactory = Callable[
     ['PolyBusBuilder', 'IPolyBus', 'IncomingMessage'],

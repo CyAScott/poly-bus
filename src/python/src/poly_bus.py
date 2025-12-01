@@ -1,15 +1,15 @@
 """PolyBus implementation for the Python version."""
 
 from typing import Dict, Any, List
-from src.i_poly_bus import IPolyBus
-from src.transport.i_transport import ITransport
-from src.transport.transaction.incoming_transaction import IncomingTransaction
-from src.transport.transaction.outgoing_transaction import OutgoingTransaction
-from src.transport.transaction.message.incoming_message import IncomingMessage
-from src.transport.transaction.message.messages import Messages
-from src.transport.transaction.message.handlers.incoming_handler import IncomingHandler
-from src.transport.transaction.message.handlers.outgoing_handler import OutgoingHandler
-from src.transport.transaction.transaction import Transaction
+from .i_poly_bus import IPolyBus
+from .transport.i_transport import ITransport
+from .transport.transaction.incoming_transaction import IncomingTransaction
+from .transport.transaction.outgoing_transaction import OutgoingTransaction
+from .transport.transaction.message.incoming_message import IncomingMessage
+from .transport.transaction.message.messages import Messages
+from .transport.transaction.message.handlers.incoming_handler import IncomingHandler
+from .transport.transaction.message.handlers.outgoing_handler import OutgoingHandler
+from .transport.transaction.transaction import Transaction
 
 
 class PolyBus(IPolyBus):

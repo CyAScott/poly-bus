@@ -1,8 +1,8 @@
 """Incoming transaction class for PolyBus Python implementation."""
 
-from src.transport.transaction.transaction import Transaction
-from src.transport.transaction.message.incoming_message import IncomingMessage
-from src.i_poly_bus import IPolyBus
+from .transaction import Transaction
+from .message.incoming_message import IncomingMessage
+from ...i_poly_bus import IPolyBus
 
 
 class IncomingTransaction(Transaction):

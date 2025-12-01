@@ -9,12 +9,12 @@ import threading
 from datetime import datetime, timezone
 from typing import Dict
 from uuid import uuid4
-from src.i_poly_bus import IPolyBus
-from src.poly_bus_builder import PolyBusBuilder
-from src.transport.i_transport import ITransport
-from src.transport.in_memory.in_memory_endpoint import InMemoryEndpoint
-from src.transport.transaction.transaction import Transaction
-from src.transport.transaction.message.incoming_message import IncomingMessage
+from ...i_poly_bus import IPolyBus
+from ...poly_bus_builder import PolyBusBuilder
+from ..i_transport import ITransport
+from .in_memory_endpoint import InMemoryEndpoint
+from ..transaction.transaction import Transaction
+from ..transaction.message.incoming_message import IncomingMessage
 
 
 class InMemoryMessageBroker:

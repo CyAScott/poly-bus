@@ -1,6 +1,6 @@
 import re
 from typing import Optional
-from src.transport.transaction.message.message_type import MessageType
+from .message_type import MessageType
 
 
 class MessageInfo:

@@ -1,7 +1,7 @@
 """Incoming handler callable type for PolyBus Python implementation."""
 
 from typing import Callable, Awaitable
-from src.transport.transaction.incoming_transaction import IncomingTransaction
+from ...incoming_transaction import IncomingTransaction
 
 # Type alias for incoming message handlers
 IncomingHandler = Callable[[IncomingTransaction, Callable[[], Awaitable[None]]], Awaitable[None]]

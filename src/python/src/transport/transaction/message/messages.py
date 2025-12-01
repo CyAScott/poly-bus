@@ -2,10 +2,10 @@
 A collection of message types and their associated message headers.
 """
 from threading import Lock
-from typing import Dict, Type, Tuple
+from typing import Dict, Type, Tuple, Optional
 import threading
-from src.transport.transaction.message.message_info import MessageInfo
-from src.transport.transaction.message.poly_bus_message_not_found_error import PolyBusMessageNotFoundError
+from .message_info import MessageInfo
+from .poly_bus_message_not_found_error import PolyBusMessageNotFoundError
 
 
 class Messages:
