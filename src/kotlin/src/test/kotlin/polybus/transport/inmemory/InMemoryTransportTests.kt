@@ -6,9 +6,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import polybus.transport.PolyBusNotStartedError
 import java.time.Instant
 
@@ -37,7 +37,12 @@ class InMemoryTransportTests {
         transaction.add(AlphaCommand().apply { name = "Test" })
 
         // Assert - should throw an error because the transport is not started
-        assertThrows<PolyBusNotStartedError> { runBlocking { transaction.commit() } }
+        try {
+            transaction.commit()
+            fail("Expected PolyBusNotStartedError to be thrown")
+        } catch (e: PolyBusNotStartedError) {
+            // Expected - exception was thrown as expected
+        }
         assertFalse(called.isCompleted)
     }
 
@@ -161,15 +166,21 @@ class InMemoryTransportTests {
         testEnvironment.beta.onMessageReceived = { called.complete(true) }
 
         // Act + Assert - subscribing and sending before starting should throw
-        assertThrows<PolyBusNotStartedError> {
-            runBlocking {
-                testEnvironment.beta.transport.subscribe(
-                    testEnvironment.beta.bus.messages.getMessageInfo(AlphaEvent::class.java)
-                )
-            }
+        try {
+            testEnvironment.beta.transport.subscribe(
+                testEnvironment.beta.bus.messages.getMessageInfo(AlphaEvent::class.java)
+            )
+            fail("Expected PolyBusNotStartedError to be thrown")
+        } catch (e: PolyBusNotStartedError) {
+            // Expected - exception was thrown as expected
         }
         transaction.add(AlphaEvent().apply { name = "Test" })
-        assertThrows<PolyBusNotStartedError> { runBlocking { transaction.commit() } }
+        try {
+            transaction.commit()
+            fail("Expected PolyBusNotStartedError to be thrown")
+        } catch (e: PolyBusNotStartedError) {
+            // Expected - exception was thrown as expected
+        }
 
         // Assert
         assertFalse(called.isCompleted)
