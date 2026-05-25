@@ -120,7 +120,7 @@ The project is configured with Gradle Kotlin DSL (`build.gradle.kts`):
 - **Kotlin Plugin**: `org.jetbrains.kotlin.jvm` 2.1.10
 - **Java Toolchain**: JDK 17
 - **Test Platform**: JUnit 5 (`useJUnitPlatform()`)
-- **Project Name**: `Poly.Bus`
+- **Project Name**: `poly-bus`
 
 ### Source Layout
 
