@@ -117,6 +117,22 @@ jobs:
           dotnet test --configuration Release
           dotnet pack --configuration Release --output ./nupkg
 
+      # Kotlin build and test
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Kotlin package
+        working-directory: src/kotlin
+        run: |
+          gradle clean build
+          gradle coverage
+
       # Upload build artifacts
       - name: Upload TypeScript artifact
         uses: actions/upload-artifact@v4
@@ -135,6 +151,12 @@ jobs:
         with:
           name: dotnet-package
           path: src/dotnet/PolyBus/nupkg/
+
+      - name: Upload Kotlin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-package
+          path: src/kotlin/build/libs/
 
   # Publish to npm
   publish-npm:
@@ -243,11 +265,45 @@ jobs:
         run: |
           dotnet nuget push "./nupkg/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
+  # Publish Gradle package
+  publish-gradle:
+    name: Publish Gradle Package
+    runs-on: ubuntu-latest
+    needs: [determine-version, build-and-test]
+    if: needs.determine-version.outputs.should_release == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Update package version
+        working-directory: src/kotlin
+        run: |
+          sed -i "s/^version = .*/version = \"${{ needs.determine-version.outputs.version }}\"/" build.gradle.kts
+
+      - name: Build and publish
+        working-directory: src/kotlin
+        env:
+          MAVEN_REPOSITORY_URL: ${{ secrets.MAVEN_REPOSITORY_URL }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+        run: |
+          gradle clean build
+          gradle publish -PmavenRepoUrl="$MAVEN_REPOSITORY_URL" -PmavenUsername="$MAVEN_USERNAME" -PmavenPassword="$MAVEN_PASSWORD"
+
   # Summary job
   publish-summary:
     name: Publish Summary
     runs-on: ubuntu-latest
-    needs: [determine-version, publish-pypi, publish-nuget]
+    needs: [determine-version, publish-npm, publish-pypi, publish-nuget, publish-gradle]
     if: always() && needs.determine-version.outputs.should_release == 'true'
     steps:
       - name: Summary
@@ -259,6 +315,7 @@ jobs:
           echo "- 📦 **npm**: ${{ needs.publish-npm.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- 🐍 **PyPI**: ${{ needs.publish-pypi.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- ⚡ **NuGet**: ${{ needs.publish-nuget.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 🟠 **Gradle/Maven**: ${{ needs.publish-gradle.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Installation Commands" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -271,4 +328,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# .NET" >> $GITHUB_STEP_SUMMARY
           echo "dotnet add package PolyBus --version ${{ needs.determine-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Kotlin (Gradle/Maven)" >> $GITHUB_STEP_SUMMARY
+          echo "implementation(\"com.cyascott:poly-bus:${{ needs.determine-version.outputs.version }}\")" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

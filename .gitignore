@@ -24,6 +24,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Gradle
+**/.gradle/*
+
 # Environment
 .env
 .env.local

@@ -1,0 +1,3 @@
+package polybus.transport.transactions.messages
+
+class MessageWithoutAttribute
