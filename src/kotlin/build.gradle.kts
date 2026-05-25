@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.10"
     jacoco
+    `maven-publish`
 }
 
 group = "com.cyascott"
@@ -42,4 +43,34 @@ tasks.register("coverage") {
 
 kotlin {
     jvmToolchain(17)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            groupId = project.group.toString()
+            artifactId = "poly-bus"
+            version = project.version.toString()
+        }
+    }
+
+    repositories {
+        maven {
+            val repoUrl = (findProperty("mavenRepoUrl") as String?)
+                ?: System.getenv("MAVEN_REPOSITORY_URL")
+                ?: ""
+
+            if (repoUrl.isNotBlank()) {
+                url = uri(repoUrl)
+            }
+
+            credentials {
+                username = (findProperty("mavenUsername") as String?)
+                    ?: System.getenv("MAVEN_USERNAME")
+                password = (findProperty("mavenPassword") as String?)
+                    ?: System.getenv("MAVEN_PASSWORD")
+            }
+        }
+    }
 }

@@ -296,9 +296,10 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
         run: |
-          gradle clean build
-          if gradle tasks --all | grep -qE '(^|[[:space:]])publish([[:space:]]|$)'; then
-            gradle publish -PmavenRepoUrl="$MAVEN_REPOSITORY_URL" -PmavenUsername="$MAVEN_USERNAME" -PmavenPassword="$MAVEN_PASSWORD"
+          chmod +x ./gradlew
+          ./gradlew clean build
+          if ./gradlew tasks --all | grep -qE '(^|[[:space:]])publish([[:space:]]|$)'; then
+            ./gradlew publish -PmavenRepoUrl="$MAVEN_REPOSITORY_URL" -PmavenUsername="$MAVEN_USERNAME" -PmavenPassword="$MAVEN_PASSWORD"
           else
             echo "Skipping Gradle publish: no 'publish' task is configured in src/kotlin."
           fi
