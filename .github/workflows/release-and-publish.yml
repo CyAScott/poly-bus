@@ -130,8 +130,9 @@ jobs:
       - name: Build Kotlin package
         working-directory: src/kotlin
         run: |
-          gradle clean build
-          gradle coverage
+          chmod +x ./gradlew
+          ./gradlew clean build
+          ./gradlew coverage
 
       # Upload build artifacts
       - name: Upload TypeScript artifact
@@ -297,7 +298,11 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
         run: |
           gradle clean build
-          gradle publish -PmavenRepoUrl="$MAVEN_REPOSITORY_URL" -PmavenUsername="$MAVEN_USERNAME" -PmavenPassword="$MAVEN_PASSWORD"
+          if gradle tasks --all | grep -qE '(^|[[:space:]])publish([[:space:]]|$)'; then
+            gradle publish -PmavenRepoUrl="$MAVEN_REPOSITORY_URL" -PmavenUsername="$MAVEN_USERNAME" -PmavenPassword="$MAVEN_PASSWORD"
+          else
+            echo "Skipping Gradle publish: no 'publish' task is configured in src/kotlin."
+          fi
 
   # Summary job
   publish-summary:

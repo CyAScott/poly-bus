@@ -63,10 +63,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build
-        run: gradle build
+        run: ./gradlew build
 
       - name: Run tests with coverage
-        run: gradle coverage
+        run: ./gradlew coverage
 
       - name: Upload Kotlin coverage
         uses: codecov/codecov-action@v4

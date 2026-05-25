@@ -1,1 +1,1 @@
-rootProject.name = "Poly.Bus"
+rootProject.name = "poly-bus"
