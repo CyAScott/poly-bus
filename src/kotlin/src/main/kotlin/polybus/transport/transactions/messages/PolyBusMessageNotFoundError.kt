@@ -4,5 +4,5 @@ import polybus.PolyBusError
 
 class PolyBusMessageNotFoundError : PolyBusError(
     2,
-    "The requested type, attribute/decorator, or header was not found."
+    "The requested type, annotation, or header was not found."
 )
