@@ -8,7 +8,7 @@ PolyBus provides a unified interface for sending and receiving messages between 
 
 ## 🌟 Key Features
 
-- **🔄 Multi-Language Support**: Native implementations for TypeScript, Python, and .NET
+- **🔄 Multi-Language Support**: Native implementations for TypeScript, Python, .NET, and Kotlin
 - **🚀 Flexible Transport**: Pluggable transport layer supporting various messaging systems
 - **⚡ Async/Await**: Modern asynchronous APIs in all language implementations
 - **🔌 Middleware Pipeline**: Extensible handler chains for incoming and outgoing messages
@@ -26,6 +26,7 @@ PolyBus provides a unified interface for sending and receiving messages between 
 | **TypeScript/JavaScript** | Node.js 14+ | ✅ Stable | CommonJS, ESM, UMD |
 | **Python** | 3.8-3.12 | ✅ Stable | PyPI package |
 | **.NET** | .NET Standard 2.1 | ✅ Stable | NuGet package |
+| **Kotlin** | JDK 17+ | ✅ Stable | Gradle/JVM package |
 | **PHP** | 8.0+ | 🚧 Planned | - |
 
 ## 🚀 Quick Start
@@ -54,6 +55,38 @@ transaction.add({ type: 'UserCreated', userId: 123 });
 await transaction.commit();
 
 await bus.stop();
+```
+
+### Kotlin
+
+```kotlin
+import kotlinx.coroutines.runBlocking
+import polybus.PolyBusBuilder
+import polybus.transport.transactions.messages.MessageInfo
+import polybus.transport.transactions.messages.MessageType
+import polybus.transport.transactions.messages.handlers.serializers.JsonHandlers
+
+@MessageInfo(MessageType.EVENT, "users", "user-created", 1, 0, 0)
+data class UserCreated(val userId: Int)
+
+fun main() = runBlocking {
+    val builder = PolyBusBuilder()
+    builder.name = "my-service"
+
+    val jsonHandlers = JsonHandlers()
+    builder.incomingPipeline.add(jsonHandlers::deserializer)
+    builder.outgoingPipeline.add(jsonHandlers::serializer)
+    builder.messages.add(UserCreated::class.java)
+
+    val bus = builder.build()
+    bus.start()
+
+    val transaction = bus.createOutgoingTransaction()
+    transaction.add(UserCreated(userId = 123))
+    transaction.commit()
+
+    bus.stop()
+}
 ```
 
 ### Python
@@ -217,6 +250,18 @@ dotnet test
 
 See [.NET README](src/dotnet/README.md) for detailed development instructions.
 
+### Kotlin Development
+
+```bash
+cd src/kotlin
+gradle clean
+gradle build
+gradle test
+gradle coverage
+```
+
+See [Kotlin README](src/kotlin/README.md) for detailed development instructions.
+
 ## 🧪 Testing
 
 All implementations include comprehensive test suites:
@@ -248,6 +293,15 @@ pip install poly-bus
 dotnet add package PolyBus
 ```
 
+### Kotlin
+
+```bash
+cd src/kotlin
+gradle build
+```
+
+For Kotlin package usage and publishing details, see [Kotlin README](src/kotlin/README.md).
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
@@ -277,6 +331,6 @@ This project is licensed under the terms specified in the [LICENSE](LICENSE) fil
 
 ## ⭐ Project Status
 
-PolyBus is actively maintained and production-ready for TypeScript, Python, and .NET implementations. PHP support is planned for future releases.
+PolyBus is actively maintained and production-ready for TypeScript, Python, .NET, and Kotlin implementations. PHP support is planned for future releases.
 
 If you find PolyBus useful, please consider giving it a star ⭐ on GitHub!

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-PolyBus is a **polyglot messaging framework** that enables seamless communication between applications written in different programming languages. It provides unified interfaces across TypeScript, Python, and .NET (with PHP planned) for building interoperable distributed systems and microservices.
+PolyBus is a **polyglot messaging framework** that enables seamless communication between applications written in different programming languages. It provides unified interfaces across TypeScript, Python, .NET, and Kotlin (with PHP planned) for building interoperable distributed systems and microservices.
 
 ## Core Architecture Principles
 
@@ -110,6 +110,28 @@ class IPolyBus(ABC):
 **Linting:**
 - Use `./lint.sh` for code quality checks
 - Follow `.editorconfig` and `.DotSettings` conventions
+
+### Kotlin (`src/kotlin/`)
+
+**Technology Stack:**
+- Kotlin/JVM 2.1.x
+- JDK 17 toolchain
+- Gradle Kotlin DSL (`build.gradle.kts`)
+- JUnit 5 + Kotlin test + JaCoCo coverage
+
+**Coding Conventions:**
+- Use coroutines (`suspend`) for async workflows
+- Keep naming consistent with cross-language parity (`IPolyBus`, `PolyBusBuilder`, `createTransaction`)
+- Prefer immutable values and data classes for message models
+
+**Testing and Coverage:**
+- Run tests with `gradle test`
+- Generate coverage with `gradle coverage`
+- JaCoCo XML report path: `build/reports/jacoco/test/jacocoTestReport.xml`
+
+**Publishing Notes:**
+- Use Gradle publish workflow (`gradle publish`) with repository credentials from CI secrets
+- Keep package coordinates stable unless intentionally changing group/artifact naming
 
 ## Cross-Language Consistency
 
@@ -349,6 +371,16 @@ dotnet restore       # Restore dependencies
 dotnet build         # Build solution
 dotnet test          # Run tests
 ./lint.sh            # Run linting
+```
+
+### Kotlin
+```bash
+cd src/kotlin
+gradle clean         # Clean build outputs
+gradle build         # Compile and run checks
+gradle test          # Run tests
+gradle coverage      # Generate JaCoCo XML/HTML coverage
+gradle publish       # Publish package (CI credentials required)
 ```
 
 ## Resources
