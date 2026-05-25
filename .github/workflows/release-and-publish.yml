@@ -130,9 +130,8 @@ jobs:
       - name: Build Kotlin package
         working-directory: src/kotlin
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean build
-          ./gradlew coverage
+          gradle clean build
+          gradle coverage
 
       # Upload build artifacts
       - name: Upload TypeScript artifact
